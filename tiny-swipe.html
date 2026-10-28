@@ -27,7 +27,13 @@ button{font:inherit;cursor:pointer}
 .shield{position:absolute;inset:0;z-index:2}
 .cover{position:absolute;inset:0;z-index:1;background:#ffd9e4;transition:opacity .12s}
 .cover.off{opacity:0;pointer-events:none}
-.hot{position:absolute;left:0;bottom:0;width:70%;height:15%;z-index:3;border:0;background:transparent;padding:0}
+.chan{position:absolute;left:var(--chanx,94px);top:var(--chany,9px);z-index:3;height:24px;max-width:calc(100% - 160px);
+  display:flex;align-items:center;gap:7px;border:0;padding:0;background:#000;color:#fff;font:500 14px/1 var(--body);white-space:nowrap}
+.chan img,.chan i{width:24px;height:24px;border-radius:50%;flex:none;object-fit:cover}
+.chan i{display:grid;place-items:center;font:800 12px var(--display);font-style:normal;color:var(--ink)}
+.chan span{overflow:hidden;text-overflow:ellipsis}
+.base{position:absolute;left:0;right:0;bottom:0;height:var(--baseh,62px);background:#000;z-index:3}
+.likemask{position:absolute;right:0;bottom:var(--baseh,62px);width:var(--likew,58px);height:var(--likeh,60px);background:#000;z-index:3;border-top-left-radius:14px}
 .topbar{position:absolute;left:calc(10px + env(safe-area-inset-left,0px));top:calc(10px + env(safe-area-inset-top,0px));z-index:3;
   display:flex;align-items:center;gap:6px;max-width:calc(100% - 76px)}
 .yt,.tag{height:24px;display:flex;align-items:center;gap:5px;border-radius:999px;background:rgba(0,0,0,.6);
@@ -286,9 +292,10 @@ function render(){
     const c=creatorOf(clip.creator)||{name:"?"};
     const s=document.createElement("section");s.className="slide";s.dataset.i=i;
     s.innerHTML=`<div class="pbox"><div id="p${i}"></div></div><div class="cover"></div><div class="shield"></div>
-      <button type="button" class="hot" aria-label="Visit ${esc(c.name)} channel"></button>`;
+      <div class="base"></div><div class="likemask"></div>
+      <button type="button" class="chan" aria-label="Visit ${esc(c.name)} channel">${c.thumb?`<img src="${esc(c.thumb)}" alt="">`:`<i style="background:${colorOf(clip.creator)}">${esc(c.name[0])}</i>`}<span>${esc(c.handle||c.at||c.name)}</span></button>`;
     s.querySelector(".shield").addEventListener("click",()=>togglePlay(i));
-    s.querySelector(".hot").addEventListener("click",()=>askVisit(clip.creator));
+    s.querySelector(".chan").addEventListener("click",()=>askVisit(clip.creator));
     feedEl.appendChild(s);
   });
   io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting&&e.intersectionRatio>=.5)setActive(+e.target.dataset.i)})},{root:feedEl,threshold:[.5]});
@@ -395,8 +402,20 @@ function goTo(i){
 }
 $("sound").addEventListener("click",unmute);
 
+async function fetchThumbs(){
+  const need=S.creators.filter(c=>c.on&&c.channelId&&!c.thumb);
+  for(let k=0;k<need.length;k+=50){
+    try{const j=await api("channels",{part:"snippet",id:need.slice(k,k+50).map(c=>c.channelId).join(",")});
+      for(const it of j.items||[]){const c=need.find(x=>x.channelId===it.id);if(!c)continue;
+        c.thumb=(it.snippet.thumbnails.default||{}).url||"";
+        if(it.snippet.customUrl)c.at=it.snippet.customUrl.startsWith("@")?it.snippet.customUrl:"@"+it.snippet.customUrl}
+    }catch(e){}
+  }
+  save();
+}
 window.onYouTubeIframeAPIReady=async()=>{
   ytReady=true;
+  if(S.apiKey)await fetchThumbs();
   const stale=Date.now()-(S.lastPull||0)>SIX_HOURS;
   const empty=S.creators.some(c=>c.on&&!c.auto.length);
   if(S.apiKey&&(stale||empty)){
@@ -501,7 +520,7 @@ async function api(path,params){
 function secs(iso){const m=iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)||[];return (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0)}
 const PER_CREATOR=100;
 async function pullCreator(c){
-  if(!c.channelId){
+  await (async()=>{ if(c.channelId)return;
     let j=c.handle?await api("channels",{part:"id",forHandle:c.handle}):{};
     if(j.items&&j.items.length)c.channelId=j.items[0].id;
     else{
@@ -509,6 +528,12 @@ async function pullCreator(c){
       if(!j.items||!j.items.length)throw new Error("Channel not found");
       c.channelId=j.items[0].snippet.channelId;
     }
+  })();
+  if(!c.thumb){
+    try{const j=await api("channels",{part:"snippet",id:c.channelId});const s=j.items&&j.items[0]&&j.items[0].snippet;
+      if(s){c.thumb=(s.thumbnails.default||{}).url||"";if(s.customUrl)c.at=s.customUrl.startsWith("@")?s.customUrl:"@"+s.customUrl}}catch(e){}
+  }
+  {
   }
   const base=c.channelId.slice(2),f=(c.filter||"").toLowerCase();
   async function walk(playlistId,maxSec){
