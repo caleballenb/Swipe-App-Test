@@ -278,6 +278,16 @@ function startClip(i){
     p.playVideo();
     if(p.getPlayerState()===1)cover(i,false);
   }catch(e){}
+  clearTimeout(window._wd);
+  window._wd=setTimeout(()=>{                     // safety: never leave a stuck pink screen
+    if(i!==active||parentOpen)return;
+    let st=-1;try{st=p.getPlayerState()}catch(e){}
+    if(st!==1){
+      try{p.mute();p.playVideo()}catch(e){}       // browser may have blocked sound; retry muted
+      if(!muted){muted=true;$("sound").hidden=false}
+    }
+    setTimeout(()=>{if(i===active)cover(i,false)},800);
+  },2500);
 }
 let visitTarget=null;
 function askVisit(id){
