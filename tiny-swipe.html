@@ -296,7 +296,7 @@ function render(){
     const c=creatorOf(clip.creator)||{name:"?"};
     const s=document.createElement("section");s.className="slide";s.dataset.i=i;
     s.innerHTML=`<div class="pbox"><div id="p${i}"></div></div><div class="cover"></div><div class="shield"></div>
-      <div class="sidemask"></div><button type="button" class="hot" aria-label="Visit ${esc(c.name)} channel"></button>`;
+      <button type="button" class="hot" aria-label="Visit ${esc(c.name)} channel"></button>`;
     s.querySelector(".shield").addEventListener("click",()=>togglePlay(i));
     s.querySelector(".hot").addEventListener("click",()=>askVisit(clip.creator));
     feedEl.appendChild(s);
