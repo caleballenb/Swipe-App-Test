@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tiny Swipe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap">
+<style>
+:root{
+  --ink:#1d2340; --sky:#eef3ff; --card:#ffffff; --line:#d7def2;
+  --sun:#ffc93c; --berry:#ff5d73; --leaf:#2bb673; --muted:#5d6788;
+  --display:"Baloo 2", ui-rounded, "Segoe UI Rounded", system-ui, sans-serif;
+  --body:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:var(--body);overscroll-behavior:none}
+button{font:inherit;cursor:pointer}
+[hidden]{display:none!important}
+
+/* ---------- kid feed ---------- */
+#feed{position:fixed;inset:0;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#feed::-webkit-scrollbar{display:none}
+.slide{position:relative;height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
+.pbox{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.pbox iframe,.pbox>div{width:100%;height:100%;border:0}
+.shield{position:absolute;inset:0;z-index:2}
+.tag{position:absolute;left:14px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:3;
+  display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;
+  background:rgba(0,0,0,.55);color:#fff;font:700 15px/1 var(--display);backdrop-filter:blur(6px)}
+.tag i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;color:var(--ink)}
+.tag small{display:block;font:500 11px/1.2 var(--body);opacity:.8}
+
+#sound{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:5;
+  border:0;border-radius:999px;padding:12px 22px;background:var(--sun);color:var(--ink);font:800 18px/1 var(--display);
+  box-shadow:0 6px 0 #d9a51c}
+#lock{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));z-index:6;
+  width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;display:grid;place-items:center;
+  touch-action:none;-webkit-user-select:none;user-select:none}
+#lock svg{position:absolute;inset:0}
+#lock circle.r{transition:stroke-dashoffset .1s linear}
+
+/* ---------- full-screen messages ---------- */
+.screen{position:fixed;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  padding:24px;text-align:center;background:var(--sky)}
+.screen h1{margin:0;font:800 clamp(34px,10vw,56px)/1 var(--display);text-wrap:balance}
+.screen p{margin:0;max-width:30ch;color:var(--muted);font-size:16px;line-height:1.45}
+.wave{font-size:72px;animation:wave 1.6s ease-in-out infinite;transform-origin:70% 70%}
+@keyframes wave{0%,100%{transform:rotate(0)}25%{transform:rotate(18deg)}50%{transform:rotate(-8deg)}}
+@media (prefers-reduced-motion:reduce){.wave{animation:none}}
+
+/* ---------- parent panel ---------- */
+#parent{position:fixed;inset:0;z-index:10;background:var(--sky);overflow-y:auto;
+  padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(32px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top h2{margin:0;font:800 28px/1 var(--display)}
+.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:700;background:var(--ink);color:#fff}
+.btn.alt{background:var(--card);color:var(--ink);border:1.5px solid var(--line)}
+.btn.go{background:var(--leaf)}
+.btn:disabled{opacity:.5}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.box{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.box h3{margin:0;font:700 13px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+label{font-size:14px;font-weight:600;display:flex;flex-direction:column;gap:6px}
+input[type=text],input[type=number],input[type=password]{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;background:#fff;color:var(--ink)}
+.hint{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+.row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.row>label{flex:1;min-width:130px}
+.creator{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.creator:first-of-type{border-top:0}
+.creator .dot{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;font:800 16px var(--display);color:var(--ink)}
+.creator .meta{flex:1;min-width:0}
+.creator b{display:block;font-size:15px}
+.creator span{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.creator .err{color:var(--berry)}
+.sw{position:relative;width:48px;height:28px;flex:none}
+.sw input{opacity:0;width:100%;height:100%;margin:0;position:absolute;cursor:pointer}
+.sw i{position:absolute;inset:0;border-radius:99px;background:var(--line);transition:.2s;pointer-events:none}
+.sw i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw input:checked+i{background:var(--leaf)}
+.sw input:checked+i::after{transform:translateX(20px)}
+.sw input:focus-visible+i{outline:3px solid var(--sun);outline-offset:2px}
+.x{border:0;background:none;color:var(--muted);font-size:20px;padding:4px 6px}
+#status{font-size:13.5px;color:var(--muted);min-height:1.2em;margin:0}
+</style>
+</head>
+<body>
+
+<div id="feed" aria-label="Video feed"></div>
+
+<div id="empty" class="screen" hidden>
+  <div class="wave">🔒</div>
+  <h1>Grown-up setup</h1>
+  <p>No clips loaded yet. Tap the lock button to open parent settings.</p>
+</div>
+
+<div id="done" class="screen" hidden>
+  <div class="wave">👋</div>
+  <h1>All done! Bye-bye!</h1>
+  <p>That's all the videos for now. A grown-up can tap the lock to start more.</p>
+</div>
+
+<button id="sound" type="button" hidden>🔊 Tap for sound</button>
+
+<button id="lock" type="button" aria-label="Open parent settings">
+  <svg viewBox="0 0 44 44" aria-hidden="true"><circle class="r" cx="22" cy="22" r="20" fill="none" stroke="#ffc93c" stroke-width="4"
+    stroke-dasharray="125.7" stroke-dashoffset="125.7" transform="rotate(-90 22 22)"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="position:static"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+</button>
+
+<div id="parent" hidden>
+  <div class="wrap">
+    <div class="top">
+      <h2>Parent settings</h2>
+      <button class="btn go" id="closeParent" type="button">Back to videos</button>
+    </div>
+
+    <div class="box">
+      <h3>Creators</h3>
+      <div id="creatorList"></div>
+      <div class="row">
+        <label>Add creator by YouTube handle<input type="text" id="newHandle" placeholder="@SuperSimpleSongs" autocomplete="off"></label>
+        <button class="btn alt" id="addCreator" type="button">Add</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <h3>Auto clips</h3>
+      <label>YouTube Data API key<input type="password" id="apiKey" placeholder="AIza…" autocomplete="off"></label>
+      <p class="hint">Enter once. Shorts are pulled automatically when the app opens (every 6 hours), when you add a creator, and when you leave settings.</p>
+      <button class="btn alt" id="refresh" type="button">Pull new Shorts now</button>
+      <p id="status" role="status"></p>
+    </div>
+
+    <div class="box">
+      <h3>Watch rules</h3>
+      <div class="row">
+        <label>Clips per session<input type="number" id="limit" min="0" max="200" inputmode="numeric"></label>
+        <label>Max seconds per clip<input type="number" id="maxSec" min="0" max="180" inputmode="numeric"></label>
+      </div>
+      <p class="hint">0 means no limit. When the clip count is reached, your child sees a "bye-bye" screen.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// Paste your key here to skip entering it in settings:
+const API_KEY="";
+const SIX_HOURS=6*3600*1000;
+const COLORS=["#ffc93c","#ff8fa3","#7cc6ff","#9be3b4","#c9a7ff","#ffb36b"];
+const DEFAULTS=[
+  {id:"msrachel",name:"Ms Rachel",handle:"@msrachel"},
+  {id:"mickey",name:"Mickey Mouse Clubhouse",handle:"@DisneyJunior",filter:"mickey"},
+  {id:"disney",name:"Disney",handle:"@Disney"},
+  {id:"spongebob",name:"SpongeBob",handle:"@SpongeBobOfficial"},
+  {id:"vania",name:"Vania Mania Kids",handle:"@VaniaManiaKids"},
+  {id:"lewis",name:"Lively Lewis Show",handle:"@LivelyLewisShow"}
+];
+const KEY="tinyswipe.v1";
+let S;
+function load(){
+  try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
+  if(!S||!S.creators){S={apiKey:API_KEY,lastPull:0,limit:10,maxSec:0,creators:DEFAULTS.map(c=>({...c,on:true,auto:[],manual:[]}))}}
+  if(!S.apiKey&&API_KEY)S.apiKey=API_KEY;
+  S.creators.forEach(c=>{c.manual=c.manual||[];c.auto=c.auto||[]});
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+load();
+
+const $=id=>document.getElementById(id);
+const feedEl=$("feed");
+let feed=[],players={},ready={},active=-1,seen=new Set(),muted=true,ytReady=false,io=null,parentOpen=false;
+
+/* ---------- feed ---------- */
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+function buildFeed(){
+  const pools=S.creators.filter(c=>c.on).map((c,ci)=>({c,clips:shuffle([...c.manual,...c.auto])})).filter(p=>p.clips.length);
+  const list=[];let more=true,k=0;
+  while(more){more=false;for(const p of pools){if(k<p.clips.length){list.push({...p.clips[k],creator:p.c.id});more=true}}k++}
+  if(!list.length)return [];
+  let out=list.slice();while(out.length<30)out=out.concat(shuffle(list));
+  return out;
+}
+function creatorOf(id){return S.creators.find(c=>c.id===id)}
+function colorOf(id){return COLORS[S.creators.findIndex(c=>c.id===id)%COLORS.length]}
+
+function render(){
+  Object.keys(players).forEach(destroyPlayer);
+  if(io)io.disconnect();
+  feed=buildFeed();active=-1;seen=new Set();
+  feedEl.innerHTML="";feedEl.scrollTop=0;
+  $("done").hidden=true;
+  $("empty").hidden=feed.length>0;
+  $("sound").hidden=!feed.length||!muted;
+  feed.forEach((clip,i)=>{
+    const c=creatorOf(clip.creator)||{name:"?"};
+    const s=document.createElement("section");s.className="slide";s.dataset.i=i;
+    s.innerHTML=`<div class="pbox"><div id="p${i}"></div></div><div class="shield"></div>
+      <div class="tag"><i style="background:${colorOf(clip.creator)}">${c.name[0]}</i><div>${esc(c.name)}<small>Original on YouTube</small></div></div>`;
+    s.querySelector(".shield").addEventListener("click",()=>togglePlay(i));
+    feedEl.appendChild(s);
+  });
+  io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting&&e.intersectionRatio>.6)setActive(+e.target.dataset.i)})},{root:feedEl,threshold:[.6]});
+  feedEl.querySelectorAll(".slide").forEach(s=>io.observe(s));
+}
+function esc(t){return String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
+
+function setActive(i){
+  if(i===active||parentOpen)return;
+  active=i;
+  if(!seen.has(i)){seen.add(i);
+    if(S.limit>0&&seen.size>S.limit){pauseAll();$("done").hidden=false;return}
+  }
+  for(const k of Object.keys(players)){const n=+k;if(Math.abs(n-i)>1)destroyPlayer(n)}
+  [i-1,i,i+1].forEach(n=>{if(n>=0&&n<feed.length&&!players[n])makePlayer(n)});
+  pauseAll(i);
+  if(ready[i])startClip(i);
+}
+function makePlayer(i){
+  if(!ytReady)return;
+  const clip=feed[i];
+  const vars={autoplay:0,controls:0,playsinline:1,rel:0,fs:0,disablekb:1,iv_load_policy:3,modestbranding:1,mute:1};
+  if(S.maxSec>0)vars.end=S.maxSec;
+  players[i]=new YT.Player("p"+i,{videoId:clip.v,width:"100%",height:"100%",playerVars:vars,
+    events:{
+      onReady:()=>{ready[i]=true;if(i===active&&!parentOpen)startClip(i)},
+      onStateChange:e=>{if(e.data===0&&i===active)goTo(i+1)},
+      onError:()=>{if(i===active)goTo(i+1)}
+    }});
+}
+function destroyPlayer(n){
+  n=+n;try{players[n].destroy()}catch(e){}
+  delete players[n];delete ready[n];
+  const s=feedEl.querySelector(`.slide[data-i="${n}"] .pbox`);
+  if(s)s.innerHTML=`<div id="p${n}"></div>`;
+}
+function startClip(i){
+  const p=players[i];if(!p)return;
+  try{p.seekTo(0,true);if(muted)p.mute();else{p.unMute();p.setVolume(100)}p.playVideo()}catch(e){}
+}
+function pauseAll(except){for(const k in players){if(+k!==except){try{players[k].pauseVideo()}catch(e){}}}}
+function togglePlay(i){
+  if(muted){unmute();return}
+  const p=players[i];if(!p)return;
+  try{p.getPlayerState()===1?p.pauseVideo():p.playVideo()}catch(e){}
+}
+function unmute(){
+  muted=false;$("sound").hidden=true;
+  const p=players[active];if(p){try{p.unMute();p.setVolume(100);p.playVideo()}catch(e){}}
+}
+function goTo(i){
+  if(i>=feed.length)i=0;
+  const s=feedEl.querySelector(`.slide[data-i="${i}"]`);
+  if(s)s.scrollIntoView({behavior:"smooth"});
+}
+$("sound").addEventListener("click",unmute);
+
+window.onYouTubeIframeAPIReady=async()=>{
+  ytReady=true;
+  const stale=Date.now()-(S.lastPull||0)>SIX_HOURS;
+  const empty=S.creators.some(c=>c.on&&!c.auto.length);
+  if(S.apiKey&&(stale||empty)){
+    if(!S.creators.some(c=>c.auto.length)){$("empty").querySelector("h1").textContent="Loading videos…";$("empty").hidden=false}
+    await pullAll(stale?S.creators.filter(c=>c.on):S.creators.filter(c=>c.on&&!c.auto.length));
+  }
+  render();
+};
+const tag=document.createElement("script");tag.src="https://www.youtube.com/iframe_api";document.head.appendChild(tag);
+
+/* ---------- parent gate: hold 3s ---------- */
+$("lock").addEventListener("click",openParent);
+
+function openParent(){
+  parentOpen=true;pauseAll();
+  $("apiKey").value=S.apiKey;$("limit").value=S.limit;$("maxSec").value=S.maxSec;
+  drawCreators();$("parent").hidden=false;$("lock").hidden=true;
+}
+function closeParent(){
+  S.apiKey=$("apiKey").value.trim();
+  S.limit=Math.max(0,parseInt($("limit").value)||0);
+  S.maxSec=Math.max(0,parseInt($("maxSec").value)||0);
+  save();parentOpen=false;$("parent").hidden=true;$("lock").hidden=false;
+  const need=S.creators.filter(c=>c.on&&!c.auto.length&&!c.err);
+  if(S.apiKey&&need.length)pullAll(need).then(()=>{if(ytReady&&!parentOpen)render()});
+  else if(ytReady)render();
+}
+$("closeParent").addEventListener("click",closeParent);
+
+function drawCreators(){
+  const list=$("creatorList");list.innerHTML="";
+  S.creators.forEach((c,idx)=>{
+    const n=c.auto.length+c.manual.length;
+    const d=document.createElement("div");d.className="creator";
+    d.innerHTML=`<div class="dot" style="background:${COLORS[idx%COLORS.length]}">${esc(c.name[0])}</div>
+      <div class="meta"><b>${esc(c.name)}</b><span>${esc(c.handle)}${c.filter?` · titles with "${esc(c.filter)}"`:""} · ${n} clip${n===1?"":"s"}</span>${c.err?`<span class="err"><br>${esc(c.err)}</span>`:""}</div>
+      <label class="sw" aria-label="Show ${esc(c.name)}"><input type="checkbox" id="on-${c.id}" ${c.on?"checked":""}><i></i></label>
+      <button class="x" type="button" aria-label="Remove ${esc(c.name)}">×</button>`;
+    d.querySelector("input").addEventListener("change",e=>{c.on=e.target.checked;save()});
+    d.querySelector(".x").addEventListener("click",()=>{S.creators.splice(idx,1);save();drawCreators()});
+    list.appendChild(d);
+  });
+}
+$("addCreator").addEventListener("click",()=>{
+  let h=$("newHandle").value.trim();if(!h)return;if(h[0]!=="@")h="@"+h;
+  const id="c"+Date.now();
+  const c={id,name:h.slice(1),handle:h,on:true,auto:[],manual:[]};
+  S.creators.push(c);$("newHandle").value="";save();drawCreators();
+  S.apiKey=$("apiKey").value.trim();
+  if(S.apiKey)pullAll([c]);
+});
+/* ---------- YouTube Data API ---------- */
+async function api(path,params){
+  const u=new URL("https://www.googleapis.com/youtube/v3/"+path);
+  for(const k in params)u.searchParams.set(k,params[k]);
+  u.searchParams.set("key",S.apiKey);
+  const r=await fetch(u);const j=await r.json();
+  if(j.error)throw new Error(j.error.message||"API error");
+  return j;
+}
+function secs(iso){const m=iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)||[];return (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0)}
+async function pullCreator(c){
+  if(!c.channelId){
+    const j=await api("channels",{part:"id",forHandle:c.handle});
+    if(!j.items||!j.items.length)throw new Error("Channel not found");
+    c.channelId=j.items[0].id;
+  }
+  const base=c.channelId.slice(2);let ids=[],shortsList=true;
+  try{
+    const j=await api("playlistItems",{part:"contentDetails",playlistId:"UUSH"+base,maxResults:50});
+    ids=j.items.map(x=>x.contentDetails.videoId);
+  }catch(e){shortsList=false}
+  if(!ids.length){
+    shortsList=false;
+    const j=await api("playlistItems",{part:"contentDetails",playlistId:"UU"+base,maxResults:50});
+    ids=j.items.map(x=>x.contentDetails.videoId);
+  }
+  if(!ids.length)return [];
+  const j=await api("videos",{part:"status,contentDetails,snippet",id:ids.join(",")});
+  const f=(c.filter||"").toLowerCase();
+  return j.items.filter(v=>v.status.embeddable&&secs(v.contentDetails.duration)<=(shortsList?180:60)
+      &&(!f||v.snippet.title.toLowerCase().includes(f)))
+    .slice(0,25).map(v=>({v:v.id,t:v.snippet.title}));
+}
+async function pullAll(list){
+  if(!S.apiKey||!list.length)return;
+  const st=$("status"),btn=$("refresh");btn.disabled=true;let total=0;
+  for(const [n,c] of list.entries()){
+    st.textContent=`Loading ${c.name} (${n+1} of ${list.length})…`;
+    try{c.auto=await pullCreator(c);c.err=c.auto.length?"":"No embeddable Shorts found";total+=c.auto.length}
+    catch(e){c.err=e.message}
+    save();if(parentOpen)drawCreators();
+  }
+  if(list.length===S.creators.filter(c=>c.on).length)S.lastPull=Date.now();
+  save();st.textContent=`Loaded ${total} clips.`;btn.disabled=false;
+}
+$("refresh").addEventListener("click",async()=>{
+  S.apiKey=$("apiKey").value.trim();save();
+  if(!S.apiKey){$("status").textContent="Add an API key first.";return}
+  await pullAll(S.creators.filter(c=>c.on));
+});
+</script>
+</body>
+</html>
