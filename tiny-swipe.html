@@ -81,6 +81,15 @@ button{font:inherit;cursor:pointer}
 .modal button{flex:1;border:0;border-radius:16px;padding:14px;font:800 20px/1 var(--display)}
 .modal .yes{background:var(--leaf);color:#fff;box-shadow:0 5px 0 #1d8a55}
 .modal .no{background:var(--berry);color:#fff;box-shadow:0 5px 0 #c94357}
+.math{display:flex;align-items:center;justify-content:center;gap:10px;font:800 26px/1 var(--display);color:var(--ink)}
+.math input{width:90px;height:52px;border:2px solid #f0c4d2;border-radius:14px;text-align:center;font:800 26px/1 var(--display);color:var(--ink);background:#fff7fa;outline:none}
+.math input:focus{border-color:#FF5E87}
+#mathForm{display:flex;flex-direction:column;gap:12px}
+.modal p.mathMsg{font:600 14px/1.3 system-ui,sans-serif;color:#c94357;min-height:1.3em}
+.math input::-webkit-inner-spin-button,.math input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.math input{-moz-appearance:textfield}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 
 /* ---------- full-screen messages ---------- */
 .screen{position:fixed;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
@@ -260,7 +269,12 @@ frame(0);requestAnimationFrame(tick);
 <div id="visit" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="visitQ">
   <div class="card">
     <p id="visitQ"></p>
-    <div class="btns"><button type="button" class="yes" id="visitYes">Yes</button><button type="button" class="no" id="visitNo">No</button></div>
+    <div class="btns" id="visitAsk"><button type="button" class="yes" id="visitYes">Yes</button><button type="button" class="no" id="visitNo">No</button></div>
+    <form id="mathForm" hidden>
+      <label class="math" for="mathA"><span id="mathQ"></span><input id="mathA" type="number" inputmode="numeric" autocomplete="off" aria-describedby="mathMsg"></label>
+      <p id="mathMsg" class="mathMsg" aria-live="polite"></p>
+      <div class="btns"><button type="submit" class="yes">Go</button><button type="button" class="no" id="mathCancel">Cancel</button></div>
+    </form>
   </div>
 </div>
 
@@ -523,14 +537,30 @@ let visitTarget=null;
 function askVisit(id){
   const c=creatorOf(id);if(!c)return;visitTarget=c;
   pauseAll();
-  $("visitQ").textContent=`Visit ${c.name} channel?`;
+  resetVisit();$("visitQ").textContent=`Visit ${c.name} channel?`;
   $("visit").hidden=false;
 }
-function closeVisit(){$("visit").hidden=true;visitTarget=null;const s=cur();if(s)startClip(s)}
+let mathAns=0;
+function newProblem(){const a=11+Math.floor(Math.random()*39),b=11+Math.floor(Math.random()*39);mathAns=a+b;
+  $("mathQ").textContent=`${a} + ${b} =`;$("mathA").value=""}
+function resetVisit(){$("visitAsk").hidden=false;$("mathForm").hidden=true;$("mathMsg").textContent=""}
+function closeVisit(){$("visit").hidden=true;visitTarget=null;resetVisit();const s=cur();if(s)startClip(s)}
 $("visitNo").addEventListener("click",closeVisit);
-$("visitYes").addEventListener("click",()=>{
-  const c=visitTarget;$("visit").hidden=true;visitTarget=null;
-  if(c)window.open(c.handle?"https://www.youtube.com/"+c.handle:"https://www.youtube.com/channel/"+c.channelId,"_blank");
+$("mathCancel").addEventListener("click",closeVisit);
+$("visitYes").addEventListener("click",()=>{        // grown-up check before leaving the app
+  if(!visitTarget)return;
+  $("visitAsk").hidden=true;$("mathForm").hidden=false;$("visitQ").textContent="Grown-ups only: solve this";
+  newProblem();$("mathA").focus();
+});
+$("mathForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  if(parseInt($("mathA").value,10)===mathAns){
+    const c=visitTarget;$("visit").hidden=true;visitTarget=null;resetVisit();
+    if(c)window.open(c.handle?"https://www.youtube.com/"+c.handle:"https://www.youtube.com/channel/"+c.channelId,"_blank");
+  }else{
+    $("mathMsg").textContent="Not quite. Try this one.";newProblem();
+    const f=$("mathForm");f.classList.remove("shake");void f.offsetWidth;f.classList.add("shake");$("mathA").focus();
+  }
 });
 function pauseAll(){slots.forEach(s=>{try{s.p&&s.p.pauseVideo()}catch(e){}})}
 function togglePlay(i){
@@ -599,7 +629,7 @@ function closeParent(){
   else if(ytReady)render();
 }
 $("closeParent").addEventListener("click",closeParent);
-const APP_VERSION="2026.10.28 · build 12:28";
+const APP_VERSION="2026.10.28 · build 12:36";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
