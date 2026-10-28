@@ -20,7 +20,9 @@
 html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:var(--body);overscroll-behavior:none}
 button{font:inherit;cursor:pointer}
 [hidden]{display:none!important}
-#intro{position:fixed;inset:0;z-index:50;background:#FFF6F9;display:grid;place-items:center;transition:opacity .4s}
+#setup{position:fixed;inset:0;z-index:7;width:100%;border:0;background:#ffd9e4;color:#2A2140;
+  font:600 24px/1.3 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 max(24px,env(safe-area-inset-left,0px));text-align:center}
+#intro{position:fixed;inset:0;z-index:50;background:#ffd9e4;display:grid;place-items:center;transition:opacity .4s}
 #intro.gone{opacity:0;pointer-events:none}
 #intro svg{width:min(100vw,100vh);height:min(100vw,100vh);display:block}
 
@@ -160,9 +162,9 @@ button.item:active,label.item:active{background:var(--press)}
 </svg></div>
 <script>
 (function(){
-  // Play on a fresh open; skip when returning to an app that was already open this session.
-  let seen=false;try{seen=sessionStorage.getItem("tsIntro")==="1";sessionStorage.setItem("tsIntro","1")}catch(e){}
-  if(seen){document.getElementById("intro").remove();return}
+  // Play every time the app starts. Skip only when Chrome quietly reloads a tab
+  // it put to sleep in the background (the user was already in the app).
+  if(document.wasDiscarded===true){document.getElementById("intro").remove();return}
 
 const G={"tiny": [{"d": "M3.9 -141.7 Q33.8 -148.2 65.0 -139.1 M35.1 -143.0 L32.5 0.0", "x": 0, "w": 67.60000000000001, "rot": -2, "dy": 0.0}, {"d": "M11.7 -98.8 L11.7 0.0 M11.7 -133.9 L11.7 -133.9", "x": 79.3, "w": 23.400000000000002, "rot": 3, "dy": -3.9000000000000004}, {"d": "M9.1 -101.4 L9.1 0.0 M9.1 -67.6 Q13.0 -104.0 35.1 -104.0 Q54.6 -104.0 54.6 -71.5 L53.3 0.0", "x": 114.4, "w": 63.7, "rot": -1.5, "dy": 2.6}, {"d": "M7.8 -101.4 L7.8 -46.8 Q7.8 -18.2 29.9 -18.2 Q50.7 -18.2 52.0 -46.8 M52.0 -101.4 L52.0 20.8 Q52.0 52.0 26.0 52.0 Q9.1 52.0 3.9 39.0", "x": 189.8, "w": 61.1, "rot": 2, "dy": -2.6}], "swiper": [{"d": "M59.8 -122.2 Q50.7 -145.6 32.5 -145.6 Q7.8 -145.6 7.8 -111.8 Q7.8 -81.9 33.8 -74.1 Q62.4 -65.0 62.4 -35.1 Q62.4 2.6 32.5 2.6 Q10.4 2.6 3.9 -19.5", "x": 0, "w": 67.60000000000001, "rot": 2, "dy": -2.6}, {"d": "M5.2 -101.4 L16.9 0.0 L36.4 -67.6 L55.9 0.0 L67.6 -101.4", "x": 79.3, "w": 72.8, "rot": -1.5, "dy": 2.6}, {"d": "M11.7 -98.8 L11.7 0.0 M11.7 -133.9 L11.7 -133.9", "x": 163.8, "w": 23.400000000000002, "rot": 3, "dy": -3.9000000000000004}, {"d": "M9.1 -101.4 L9.1 54.6 M9.1 -70.2 Q11.7 -104.0 33.8 -104.0 Q57.2 -104.0 57.2 -52.0 Q57.2 1.3 33.8 1.3 Q13.0 1.3 9.1 -28.6", "x": 198.9, "w": 66.3, "rot": 1.5, "dy": -1.3}, {"d": "M10.4 -53.3 L55.9 -53.3 Q57.2 -104.0 32.5 -104.0 Q7.8 -104.0 7.8 -49.4 Q7.8 2.6 33.8 2.6 Q49.4 2.6 57.2 -14.3", "x": 276.9, "w": 65.0, "rot": -2, "dy": 2.6}, {"d": "M9.1 -101.4 L9.1 0.0 M9.1 -62.4 Q15.6 -104.0 45.5 -101.4", "x": 353.59999999999997, "w": 49.4, "rot": 2.5, "dy": -2.6}], "tw": 250.90000000000003, "sw": 403.0, "space": 48, "stroke": 19.5};
 const NS="http://www.w3.org/2000/svg",L=document.getElementById("ti-letters");
@@ -237,6 +239,7 @@ frame(0);requestAnimationFrame(tick);
 <div id="stage"><div class="slot" id="slotA"><div id="pA"></div></div><div class="slot" id="slotB"><div id="pB"></div></div></div>
 <div id="feed" aria-label="Video feed"></div>
 
+<button id="setup" type="button" hidden>Setup for your Tiny Swiper</button>
 <div id="empty" class="screen" hidden>
   <div class="wave">🔒</div>
   <h1>Grown-up setup</h1>
@@ -405,13 +408,17 @@ function buildFeed(){
 function creatorOf(id){return S.creators.find(c=>c.id===id)}
 function colorOf(id){return COLORS[S.creators.findIndex(c=>c.id===id)%COLORS.length]}
 
+function needsSetup(){return !S.apiKey||!S.creators.some(c=>c.on)}
+function showSetup(){const on=needsSetup()&&!parentOpen;$("setup").hidden=!on;$("setup").classList.toggle("light",S.theme==="light");$("lock").hidden=on||parentOpen;return on}
+$("setup").addEventListener("click",openParent);
+showSetup();
 function render(){
   slots.forEach(s=>{s.idx=-1;s.primed=false;try{s.p&&s.p.pauseVideo()}catch(e){}});showSlot(null);
   if(io)io.disconnect();
   feed=buildFeed();active=-1;seen=new Set();
   feedEl.innerHTML="";feedEl.scrollTop=0;
   $("done").hidden=true;
-  $("empty").hidden=feed.length>0;
+  $("empty").hidden=feed.length>0||showSetup();
   if(!feed.length){
     const on=S.creators.filter(c=>c.on),bad=on.find(c=>c.err);
     $("empty").querySelector("h1").textContent=S.apiKey?"No videos yet":"Grown-up setup";
@@ -572,7 +579,7 @@ const tag=document.createElement("script");tag.src="https://www.youtube.com/ifra
 $("lock").addEventListener("click",openParent);
 
 function openParent(){
-  parentOpen=true;pauseAll();
+  parentOpen=true;pauseAll();$("setup").hidden=true;
   $("apiKey").value=S.apiKey;$("limit").value=S.limit;$("maxSec").value=S.maxSec;
   applyTheme();showView("vMain");drawCreators();$("parent").hidden=false;$("lock").hidden=true;
 }
@@ -580,7 +587,7 @@ function closeParent(){
   S.apiKey=$("apiKey").value.trim();
   S.limit=Math.max(0,parseInt($("limit").value)||0);
   S.maxSec=Math.max(0,parseInt($("maxSec").value)||0);
-  save();parentOpen=false;$("parent").hidden=true;$("lock").hidden=false;
+  save();parentOpen=false;$("parent").hidden=true;$("lock").hidden=false;showSetup();
   const need=S.creators.filter(c=>c.on&&!c.auto.length&&!c.err);
   if(S.apiKey&&need.length){queuePull(need);pullChain.then(()=>{if(ytReady&&!parentOpen)render()})}
   else if(ytReady)render();
