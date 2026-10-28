@@ -293,7 +293,6 @@ function render(){
     const c=creatorOf(clip.creator)||{name:"?"};
     const s=document.createElement("section");s.className="slide";s.dataset.i=i;
     s.innerHTML=`<div class="pbox"><div id="p${i}"></div></div><div class="cover"></div><div class="shield"></div>
-      <div class="base"></div><div class="leftmask"></div><div class="likemask"></div>
       <button type="button" class="chan" aria-label="Visit ${esc(c.name)} channel">${c.thumb?`<img src="${esc(c.thumb)}" alt="">`:`<i style="background:${colorOf(clip.creator)}">${esc(c.name[0])}</i>`}<span>${esc(c.handle||c.at||c.name)}</span></button>`;
     s.querySelector(".shield").addEventListener("click",()=>togglePlay(i));
     s.querySelector(".chan").addEventListener("click",()=>askVisit(clip.creator));
