@@ -29,6 +29,12 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 #setupBtn:active,#setupBtn.down,#startBtn.down{transform:translateY(5px);box-shadow:0 1px 0 #D9426A}
 #setupBtn:focus-visible{outline:3px solid #2A2140;outline-offset:4px}
 #setupWord{width:min(72vw,380px);height:auto;display:block}
+#loading{position:fixed;inset:0;z-index:9;background:#FFD9E4;display:grid;place-items:center}
+#loading .lbox{display:flex;flex-direction:column;align-items:center;gap:12px;font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;color:#2A2140}
+#loading p{margin:0;font-size:16px;font-weight:600}
+.ltrack{width:min(60vw,240px);height:10px;border-radius:99px;background:#FFC4D5;overflow:hidden}
+#loadFill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#FF9CC2,#FF5E87);transition:width .3s ease}
+#loadPct{font-size:14px;font-weight:600;color:#6E5A68;font-variant-numeric:tabular-nums}
 #intro{position:fixed;inset:0;z-index:50;background:#FFD9E4;display:grid;place-items:center;transition:opacity .4s}
 #intro.gone{opacity:0;pointer-events:none}
 #intro svg{width:min(100vw,100vh);height:min(100vw,100vh);display:block}
@@ -271,6 +277,9 @@ frame(0);requestAnimationFrame(tick);
 <div id="stage"><div class="slot" id="slotA"><div id="pA"></div></div><div class="slot" id="slotB"><div id="pB"></div></div></div>
 <div id="feed" aria-label="Video feed"></div>
 
+<div id="loading" hidden role="status" aria-live="polite">
+  <div class="lbox"><p>Getting videos ready</p><div class="ltrack"><div id="loadFill"></div></div><span id="loadPct">0%</span></div>
+</div>
 <div id="setup" hidden><button id="setupBtn" type="button" aria-label="Setup for your Tiny Swiper"><svg id="setupWord" viewBox="-6 -122 1301 175" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"><path transform="translate(26.0 -2) rotate(2) translate(-26.0 0)" d="M46 -94 Q39 -112 25 -112 Q6 -112 6 -86 Q6 -63 26 -57 Q48 -50 48 -27 Q48 2 25 2 Q8 2 3 -15"/><path transform="translate(86.0 2) rotate(-2) translate(-25.0 0)" d="M8 -41 L43 -41 Q44 -80 25 -80 Q6 -80 6 -38 Q6 2 26 2 Q38 2 44 -11"/><path transform="translate(137.0 1) rotate(2) translate(-17.0 0)" d="M15 -104 L14 -10 Q14 2 28 0 M3 -77 L31 -79"/><path transform="translate(187.5 -2) rotate(-2) translate(-24.5 0)" d="M7 -78 L7 -30 Q7 2 25 2 Q42 2 42 -30 M42 -78 L42 0"/><path transform="translate(246.5 -1) rotate(1.5) translate(-25.5 0)" d="M7 -78 L7 42 M7 -54 Q9 -80 26 -80 Q44 -80 44 -40 Q44 1 26 1 Q10 1 7 -22"/><path transform="translate(328.0 1) rotate(-1.5) translate(-17.0 0)" d="M31 -106 Q15 -114 14 -88 L13 0 M3 -77 L31 -79"/><path transform="translate(379.0 2) rotate(1.5) translate(-25.0 0)" d="M25 -80 Q6 -80 6 -39 Q6 2 25 2 Q44 2 44 -39 Q44 -80 25 -80 Z"/><path transform="translate(432.0 -2) rotate(2.5) translate(-19.0 0)" d="M7 -78 L7 0 M7 -48 Q12 -80 35 -78"/><path transform="translate(513.5 -2) rotate(2) translate(-23.5 0)" d="M6 -78 L6 -36 Q6 -14 23 -14 Q39 -14 40 -36 M40 -78 L40 16 Q40 40 20 40 Q7 40 3 30"/><path transform="translate(571.0 2) rotate(1.5) translate(-25.0 0)" d="M25 -80 Q6 -80 6 -39 Q6 2 25 2 Q44 2 44 -39 Q44 -80 25 -80 Z"/><path transform="translate(629.5 -2) rotate(-2) translate(-24.5 0)" d="M7 -78 L7 -30 Q7 2 25 2 Q42 2 42 -30 M42 -78 L42 0"/><path transform="translate(682.0 -2) rotate(2.5) translate(-19.0 0)" d="M7 -78 L7 0 M7 -48 Q12 -80 35 -78"/><path transform="translate(767.0 0) rotate(-2) translate(-26.0 0)" d="M3 -109 Q26 -114 50 -107 M27 -110 L25 0"/><path transform="translate(811.0 -3) rotate(3) translate(-9.0 0)" d="M9 -76 L9 0 M9 -103 L9 -103"/><path transform="translate(853.5 2) rotate(-1.5) translate(-24.5 0)" d="M7 -78 L7 0 M7 -52 Q10 -80 27 -80 Q42 -80 42 -55 L41 0"/><path transform="translate(910.5 -2) rotate(2) translate(-23.5 0)" d="M6 -78 L6 -36 Q6 -14 23 -14 Q39 -14 40 -36 M40 -78 L40 16 Q40 40 20 40 Q7 40 3 30"/><path transform="translate(999.0 -2) rotate(2) translate(-26.0 0)" d="M46 -94 Q39 -112 25 -112 Q6 -112 6 -86 Q6 -63 26 -57 Q48 -50 48 -27 Q48 2 25 2 Q8 2 3 -15"/><path transform="translate(1062.0 2) rotate(-1.5) translate(-28.0 0)" d="M4 -78 L13 0 L28 -52 L43 0 L52 -78"/><path transform="translate(1108.0 -3) rotate(3) translate(-9.0 0)" d="M9 -76 L9 0 M9 -103 L9 -103"/><path transform="translate(1151.5 -1) rotate(1.5) translate(-25.5 0)" d="M7 -78 L7 42 M7 -54 Q9 -80 26 -80 Q44 -80 44 -40 Q44 1 26 1 Q10 1 7 -22"/><path transform="translate(1211.0 2) rotate(-2) translate(-25.0 0)" d="M8 -41 L43 -41 Q44 -80 25 -80 Q6 -80 6 -38 Q6 2 26 2 Q38 2 44 -11"/><path transform="translate(1264.0 -2) rotate(2.5) translate(-19.0 0)" d="M7 -78 L7 0 M7 -48 Q12 -80 35 -78"/></g></svg></button></div>
 <div id="empty" class="screen" hidden>
   <div class="wave">🔒</div>
@@ -654,12 +663,18 @@ function closeParent(start){
   atSetup=!start;parentOpen=false;$("parent").hidden=true;$("lock").hidden=false;
   if(showSetup()){pauseAll();return}
   const need=S.creators.filter(c=>c.on&&!c.auto.length&&!c.err);
-  if(S.apiKey&&need.length){queuePull(need);pullChain.then(()=>{if(ytReady&&!parentOpen)render()})}
+  if(S.apiKey&&need.length)queuePull(need);
+  if(start&&loadD<loadT){                        // still loading: show progress, then go to videos at 100%
+    paintBar(0);loadBar();$("loading").hidden=false;$("lock").hidden=true;
+    pullChain.then(()=>{loadBar(100);setTimeout(()=>{$("loading").hidden=true;shownPct=0;$("lock").hidden=false;loadT=loadD=0;if(ytReady&&!parentOpen)render()},350)});
+    return;
+  }
+  if(need.length)pullChain.then(()=>{loadT=loadD=0;if(ytReady&&!parentOpen)render()});
   else if(ytReady)render();
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.10.28 · build 13:22";
+const APP_VERSION="2026.10.28 · build 13:36";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
@@ -705,11 +720,23 @@ $("filterQ").addEventListener("input",drawCreators);
 $("allOn").addEventListener("click",()=>{S.creators.forEach(c=>c.on=true);save();drawCreators();queuePull(S.creators.filter(c=>!c.auto.length))});
 $("allOff").addEventListener("click",()=>{S.creators.forEach(c=>c.on=false);save();drawCreators()});
 
-let pullChain=Promise.resolve();
+let pullChain=Promise.resolve(),loadT=0,loadD=0;
+let shownPct=0,creep=0;
+function paintBar(p){shownPct=p;$("loadFill").style.width=p+"%";$("loadPct").textContent=Math.round(p)+"%"}
+function loadBar(pct){
+  if(pct!==undefined){clearInterval(creep);creep=0;paintBar(pct);return}
+  const real=loadT?loadD/loadT*100:0;
+  if(real>shownPct)paintBar(real);
+  if(!creep)creep=setInterval(()=>{                 // ease forward between channels so the bar never sits still
+    const r=loadT?loadD/loadT*100:0,cap=Math.min(99,r+(loadT?100/loadT:100)*.9);
+    if(shownPct<cap)paintBar(Math.min(cap,shownPct+Math.max(.4,(cap-shownPct)*.08)));
+  },120);
+}
 function queuePull(list){
   S.apiKey=$("apiKey").value.trim();save();
   if(!S.apiKey||!list.length)return;
-  pullChain=pullChain.then(()=>pullAll(list)).catch(()=>{});
+  loadT+=list.length;loadBar();
+  pullChain=pullChain.then(()=>pullAll(list,null,2,4,true)).catch(()=>{});
 }
 
 async function doSearch(){
@@ -794,7 +821,7 @@ async function pullCreator(c,maxPages=2){
   if(!clips.length)throw new Error(!seenShorts?"This channel has no Shorts":notKids===seenShorts?"Shorts aren't marked Made for Kids":"No playable Shorts");
   return clips;
 }
-async function pullAll(list,onFirst,maxPages=2,workers=4){
+async function pullAll(list,onFirst,maxPages=2,workers=4,track=false){
   if(!S.apiKey||!list.length)return;
   let total=0,fired=false;
   const queue=list.slice();
@@ -803,6 +830,7 @@ async function pullAll(list,onFirst,maxPages=2,workers=4){
       const c=queue.shift();
       try{const got=await pullCreator(c,maxPages);if(got.length>=c.auto.length||maxPages>1)c.auto=got;c.err="";total+=c.auto.length}
       catch(e){c.auto=[];c.err=e.message}
+      if(track){loadD++;loadBar()}
       save();if(parentOpen)drawCreators();
       if(!fired&&total&&onFirst){fired=true;onFirst()}
     }
