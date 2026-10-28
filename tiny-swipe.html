@@ -95,7 +95,7 @@ button{font:inherit;cursor:pointer}
 #parent{position:fixed;inset:0;z-index:10;overflow-y:auto;background:var(--bg);color:var(--fg);
   font:16px/1.35 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;
   --bg:#0f0f0f;--fg:#f1f1f1;--sub:#aaa;--icon:#f1f1f1;--field:#272727;--press:#272727;--line:#3f3f3f;--blue:#3ea6ff;--off:#717171}
-#parent.light{color-scheme:light;--bg:#fff;--fg:#0f0f0f;--sub:#606060;--icon:#0f0f0f;--field:#f2f2f2;--press:#f2f2f2;--line:#e5e5e5;--blue:#065fd4;--off:#ccc}
+#parent.light{color-scheme:light;--bg:#FFF6F9;--fg:#2A2140;--sub:#7a6b78;--icon:#2A2140;--field:#FFE6EE;--press:#FFE6EE;--line:#F5D9E2;--blue:#FF5E87;--off:#e5c9d2}
 .view{max-width:600px;margin:0 auto;padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
 .bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:20px;height:calc(56px + env(safe-area-inset-top,0px));
   padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px));background:var(--bg)}
@@ -599,9 +599,9 @@ function closeParent(){
   else if(ytReady)render();
 }
 $("closeParent").addEventListener("click",closeParent);
-const APP_VERSION="2026.10.28 · build 12:08";
+const APP_VERSION="2026.10.28 · build 12:10";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
-function applyTheme(){$("parent").classList.toggle("light",S.theme==="light");$("darkMode").checked=S.theme!=="light"}
+function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
 function showView(id){$("vMain").hidden=id!=="vMain";$("vChannels").hidden=id!=="vChannels";$("parent").scrollTop=0}
 $("openChannels").addEventListener("click",()=>{showView("vChannels");drawCreators()});
