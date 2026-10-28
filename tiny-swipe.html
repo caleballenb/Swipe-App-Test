@@ -19,9 +19,13 @@ button{font:inherit;cursor:pointer}
 [hidden]{display:none!important}
 
 /* ---------- kid feed ---------- */
-#feed{position:fixed;inset:0;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#feed{position:fixed;inset:0;z-index:1;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #feed::-webkit-scrollbar{display:none}
-.slide{position:relative;height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
+.slide{position:relative;height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:transparent;overflow:hidden}
+#stage{position:fixed;inset:0;background:#ffd9e4}
+#stage .slot{position:absolute;inset:0;opacity:0}
+#stage .slot.show{opacity:1}
+#stage iframe,#stage .slot>div{position:absolute;inset:0;width:100%;height:100%;border:0}
 .pbox{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 .pbox iframe,.pbox>div{position:absolute;inset:0;width:100%;height:100%;border:0}
 .shield{position:absolute;inset:0;z-index:2}
@@ -126,6 +130,7 @@ button.item:active,label.item:active{background:#f5f5f5}
 </head>
 <body>
 
+<div id="stage"><div class="slot" id="slotA"><div id="pA"></div></div><div class="slot" id="slotB"><div id="pB"></div></div></div>
 <div id="feed" aria-label="Video feed"></div>
 
 <div id="empty" class="screen" hidden>
@@ -283,7 +288,7 @@ function sizePlayers(){
   document.documentElement.style.setProperty("--ph",ph+"px");
 }
 
-let feed=[],players={},ready={},active=-1,seen=new Set(),muted=true,ytReady=false,io=null,parentOpen=false;
+let feed=[],active=-1,seen=new Set(),muted=true,ytReady=false,io=null,parentOpen=false;
 
 /* ---------- feed ---------- */
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -299,9 +304,9 @@ function creatorOf(id){return S.creators.find(c=>c.id===id)}
 function colorOf(id){return COLORS[S.creators.findIndex(c=>c.id===id)%COLORS.length]}
 
 function render(){
-  Object.keys(players).forEach(destroyPlayer);
+  slots.forEach(s=>{s.idx=-1;s.primed=false;try{s.p&&s.p.pauseVideo()}catch(e){}});showSlot(null);
   if(io)io.disconnect();
-  feed=buildFeed();active=-1;seen=new Set();rebuilt={};
+  feed=buildFeed();active=-1;seen=new Set();
   feedEl.innerHTML="";feedEl.scrollTop=0;
   $("done").hidden=true;
   $("empty").hidden=feed.length>0;
@@ -316,7 +321,7 @@ function render(){
   feed.forEach((clip,i)=>{
     const c=creatorOf(clip.creator)||{name:"?"};
     const s=document.createElement("section");s.className="slide";s.dataset.i=i;
-    s.innerHTML=`<div class="pbox"><div id="p${i}"></div></div><div class="cover"></div><div class="shield"></div>
+    s.innerHTML=`<div class="cover"></div><div class="shield"></div>
       <button type="button" class="hot" aria-label="Visit ${esc(c.name)} channel"></button><button type="button" class="hot top" aria-label="Visit ${esc(c.name)} channel"></button>`;
     s.querySelector(".shield").addEventListener("click",()=>togglePlay(i));
     s.querySelectorAll(".hot").forEach(b=>b.addEventListener("click",()=>askVisit(clip.creator)));
@@ -327,97 +332,100 @@ function render(){
 }
 function esc(t){return String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
 
-// Phones only decode a couple of videos at once, so keep just the current clip
-// and the next one alive. The next one is pre-buffered silently, then paused.
-let primed={},rebuilt={},wd1=0,wd2=0;
+// Two YouTube players are created once and reused. One shows the current clip,
+// the other silently loads the next clip and waits paused at the start, so a
+// swipe just swaps which player is visible. No iframe is rebuilt per swipe.
+const slots=[{el:null,p:null,ready:false,idx:-1,primed:false},{el:null,p:null,ready:false,idx:-1,primed:false}];
+let wd1=0,wd2=0;
 function cover(i,on){const c=feedEl.querySelector(`.slide[data-i="${i}"] .cover`);if(c)c.classList.toggle("off",!on)}
+function showSlot(s){slots.forEach(x=>x.el&&x.el.classList.toggle("show",x===s))}
+function slotFor(i){return slots.find(s=>s.idx===i)}
+function cur(){return slotFor(active)}
+function makePlayers(){
+  if(slots[0].p||!ytReady)return;
+  ["A","B"].forEach((k,n)=>{
+    const s=slots[n];s.el=$("slot"+k);
+    s.p=new YT.Player("p"+k,{width:"100%",height:"100%",
+      playerVars:{autoplay:0,controls:0,playsinline:1,rel:0,fs:0,disablekb:1,iv_load_policy:3,modestbranding:1,mute:1},
+      events:{
+        onReady:()=>{s.ready=true;sync()},
+        onStateChange:e=>onState(s,e.data),
+        onError:()=>{if(s.idx===active)goTo(active+1);else{s.idx=-1;s.primed=false;sync()}}
+      }});
+  });
+}
+function loadInto(s,i,play){
+  s.idx=i;s.primed=false;
+  const o={videoId:feed[i].v,startSeconds:0};if(S.maxSec>0)o.endSeconds=S.maxSec;
+  try{s.p.mute();s.p.loadVideoById(o)}catch(e){}
+}
+function onState(s,st){
+  if(st===1){
+    if(s.idx===active&&!parentOpen){
+      showSlot(s);cover(active,false);clearTimeout(wd1);clearTimeout(wd2);
+      if(!muted){try{s.p.unMute();s.p.setVolume(100)}catch(e){}}
+      prepNext();
+    }else if(!s.primed){s.primed=true;try{s.p.pauseVideo();s.p.seekTo(0,true)}catch(e){}}
+  }
+  if(st===0&&s.idx===active)goTo(active+1);
+}
+function prepNext(){
+  const n=active+1;if(n>=feed.length||slotFor(n))return;
+  const other=slots.find(s=>s.idx!==active);
+  if(other&&other.ready)loadInto(other,n);
+}
+function sync(){                               // make sure the current clip is loaded and playing
+  if(active<0||parentOpen||!slots.every(s=>s.ready))return;
+  let s=cur();
+  if(s&&s.primed){startClip(s);return}
+  if(!s){s=slots.find(x=>x.idx!==active+1)||slots[0];loadInto(s,active)}
+}
+function startClip(s){
+  showSlot(s);cover(active,false);
+  try{if(muted)s.p.mute();else{s.p.unMute();s.p.setVolume(100)}s.p.playVideo()}catch(e){}
+  prepNext();
+}
 function setActive(i){
   if(i===active||parentOpen)return;
-  active=i;
+  const prev=cur();active=i;
   if(!seen.has(i)){seen.add(i);
     if(S.limit>0&&seen.size>S.limit){pauseAll();$("done").hidden=false;return}
   }
-  for(const k of Object.keys(players)){const n=+k;if(n!==i&&n!==i+1)destroyPlayer(n)}
-  if(!players[i])makePlayer(i);else startClip(i);
-  watch(i);
+  if(prev&&prev.idx!==i){try{prev.p.pauseVideo()}catch(e){}}
+  cover(i,true);makePlayers();sync();watch(i);
 }
-function prepNext(i){                       // build the next clip once the current one is playing
-  const n=i+1;if(n<feed.length&&!players[n])makePlayer(n);
-}
-function makePlayer(i){
-  if(!ytReady||players[i])return;
-  const vars={autoplay:0,controls:0,playsinline:1,rel:0,fs:0,disablekb:1,iv_load_policy:3,modestbranding:1,mute:1};
-  if(S.maxSec>0)vars.end=S.maxSec;
-  cover(i,true);
-  players[i]=new YT.Player("p"+i,{videoId:feed[i].v,width:"100%",height:"100%",playerVars:vars,
-    events:{
-      onReady:()=>{ready[i]=true;
-        if(i===active&&!parentOpen)startClip(i);
-        else if(i===active+1){try{players[i].mute();players[i].playVideo()}catch(e){}}
-      },
-      onStateChange:e=>{
-        if(e.data===1){
-          if(i===active&&!parentOpen){cover(i,false);clearTimeout(wd1);clearTimeout(wd2);prepNext(i)}
-          else if(!primed[i]){primed[i]=true;try{players[i].pauseVideo();players[i].seekTo(0,true)}catch(x){}}
-        }
-        if(e.data===0&&i===active)goTo(i+1);
-      },
-      onError:()=>{if(i===active)goTo(i+1);else destroyPlayer(i)}
-    }});
-}
-function destroyPlayer(n){
-  n=+n;try{players[n].destroy()}catch(e){}
-  delete players[n];delete ready[n];delete primed[n];
-  const s=feedEl.querySelector(`.slide[data-i="${n}"] .pbox`);
-  if(s)s.innerHTML=`<div id="p${n}"></div>`;
-  cover(n,true);
-}
-function startClip(i){
-  const p=players[i];if(!p||!ready[i])return;
-  try{
-    if(!primed[i])p.seekTo(0,true);
-    primed[i]=true;
-    if(muted)p.mute();else{p.unMute();p.setVolume(100)}
-    p.playVideo();
-    if(p.getPlayerState()===1){cover(i,false);prepNext(i)}
-  }catch(e){}
-}
-function playing(i){try{return players[i].getPlayerState()===1}catch(e){return false}}
+function playing(){const s=cur();try{return !!s&&s.p.getPlayerState()===1}catch(e){return false}}
 function watch(i){                          // recover from a clip that won't start
   clearTimeout(wd1);clearTimeout(wd2);
   wd1=setTimeout(()=>{
-    if(i!==active||parentOpen||playing(i))return;
-    try{players[i].mute();players[i].playVideo()}catch(e){}
+    if(i!==active||parentOpen||playing())return;
+    const s=cur();if(s){try{s.p.mute();s.p.playVideo()}catch(e){}}
     if(!muted){muted=true;$("sound").hidden=false}
-  },2000);
-  wd2=setTimeout(()=>{
-    if(i!==active||parentOpen||playing(i))return;
-    if(rebuilt[i]){goTo(i+1);return}        // second failure: skip it
-    rebuilt[i]=true;destroyPlayer(i);makePlayer(i);watch(i);
-  },4500);
+  },2500);
+  wd2=setTimeout(()=>{if(i===active&&!parentOpen&&!playing())goTo(i+1)},8000);
 }
 let visitTarget=null;
 function askVisit(id){
   const c=creatorOf(id);if(!c)return;visitTarget=c;
-  try{players[active].pauseVideo()}catch(e){}
+  pauseAll();
   $("visitQ").textContent=`Visit ${c.name} channel?`;
   $("visit").hidden=false;
 }
-function closeVisit(){$("visit").hidden=true;visitTarget=null;startClip(active)}
+function closeVisit(){$("visit").hidden=true;visitTarget=null;const s=cur();if(s)startClip(s)}
 $("visitNo").addEventListener("click",closeVisit);
 $("visitYes").addEventListener("click",()=>{
   const c=visitTarget;$("visit").hidden=true;visitTarget=null;
   if(c)window.open(c.handle?"https://www.youtube.com/"+c.handle:"https://www.youtube.com/channel/"+c.channelId,"_blank");
 });
-function pauseAll(except){for(const k in players){if(+k!==except){try{players[k].pauseVideo()}catch(e){}}}}
+function pauseAll(){slots.forEach(s=>{try{s.p&&s.p.pauseVideo()}catch(e){}})}
 function togglePlay(i){
   if(muted){unmute();return}
-  const p=players[i];if(!p)return;
-  try{p.getPlayerState()===1?p.pauseVideo():p.playVideo()}catch(e){}
+  const s=cur();if(!s)return;
+  try{s.p.getPlayerState()===1?s.p.pauseVideo():s.p.playVideo()}catch(e){}
 }
 function unmute(){
   muted=false;$("sound").hidden=true;
-  const p=players[active];if(p){try{p.unMute();p.setVolume(100);p.playVideo()}catch(e){}}
+  const s=cur();if(s){try{s.p.unMute();s.p.setVolume(100);s.p.playVideo()}catch(e){}}
 }
 function goTo(i){
   if(i>=feed.length)i=0;
