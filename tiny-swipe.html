@@ -22,9 +22,9 @@ button{font:inherit;cursor:pointer}
 [hidden]{display:none!important}
 #setup{position:fixed;inset:0;z-index:7;background:#FFD9E4;display:grid;place-items:center;
   font:600 24px/1.3 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 max(24px,env(safe-area-inset-left,0px));text-align:center}
-#setupBtn{border:0;border-radius:999px;padding:22px 30px;color:#fff;cursor:pointer;
-  background:linear-gradient(135deg,#FF9CC2,#FF5E87);box-shadow:0 6px 0 #D9426A,0 14px 28px rgba(255,94,135,.35);transition:transform .1s,box-shadow .1s}
-#setupBtn:active{transform:translateY(5px);box-shadow:0 1px 0 #D9426A,0 6px 14px rgba(255,94,135,.3)}
+#setupBtn{border:0;border-radius:999px;padding:22px 30px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  background:linear-gradient(135deg,#FF9CC2,#FF5E87);box-shadow:0 6px 0 #D9426A,0 14px 28px rgba(255,94,135,.3);transition:transform .1s,box-shadow .1s}
+#setupBtn:active,#setupBtn.down,#startBtn.down{transform:translateY(5px);box-shadow:0 1px 0 #D9426A}
 #setupBtn:focus-visible{outline:3px solid #2A2140;outline-offset:4px}
 #setupWord{width:min(72vw,380px);height:auto;display:block}
 #intro{position:fixed;inset:0;z-index:50;background:#FFD9E4;display:grid;place-items:center;transition:opacity .4s}
@@ -149,7 +149,7 @@ button.item:active,label.item:active{background:var(--press)}
 #searchResults:empty{display:none}
 .startWrap{margin-top:28px;padding:0 16px;display:flex;flex-direction:column;align-items:center;gap:10px}
 .startWrap .foot{padding:0;text-align:center;color:#c94357;min-height:1.2em}
-#startBtn{width:100%;max-width:420px;border:0;border-radius:999px;padding:18px 24px;color:#fff;cursor:pointer;
+#startBtn{-webkit-tap-highlight-color:transparent;width:100%;max-width:420px;border:0;border-radius:999px;padding:18px 24px;color:#fff;cursor:pointer;
   background:linear-gradient(135deg,#FF9CC2,#FF5E87);box-shadow:0 6px 0 #D9426A,0 14px 28px rgba(255,94,135,.3);transition:transform .1s,box-shadow .1s}
 #startBtn:active{transform:translateY(5px);box-shadow:0 1px 0 #D9426A}
 #startBtn:focus-visible{outline:3px solid var(--fg);outline-offset:4px}
@@ -451,7 +451,13 @@ function colorOf(id){return COLORS[S.creators.findIndex(c=>c.id===id)%COLORS.len
 function needsSetup(){return !S.apiKey||!S.creators.some(c=>c.on)}
 let atSetup=false;   // true after leaving Settings with the back arrow
 function showSetup(){const on=(needsSetup()||atSetup)&&!parentOpen;$("setup").hidden=!on;$("setup").classList.toggle("light",S.theme==="light");$("lock").hidden=on||parentOpen;return on}
-$("setupBtn").addEventListener("click",openParent);
+// same press-down effect on both big buttons; the action runs after the press is seen
+function pressable(el,fn){
+  el.addEventListener("pointerdown",()=>el.classList.add("down"));
+  ["pointerup","pointerleave","pointercancel"].forEach(t=>el.addEventListener(t,()=>el.classList.remove("down")));
+  el.addEventListener("click",()=>{el.classList.add("down");setTimeout(()=>{el.classList.remove("down");fn()},140)});
+}
+pressable($("setupBtn"),openParent);
 showSetup();
 function render(){
   slots.forEach(s=>{s.idx=-1;s.primed=false;try{s.p&&s.p.pauseVideo()}catch(e){}});showSlot(null);
@@ -653,8 +659,8 @@ function closeParent(start){
   else if(ytReady)render();
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
-$("startBtn").addEventListener("click",()=>closeParent(true));
-const APP_VERSION="2026.10.28 · build 13:00";
+pressable($("startBtn"),()=>closeParent(true));
+const APP_VERSION="2026.10.28 · build 13:08";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
