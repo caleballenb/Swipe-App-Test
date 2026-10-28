@@ -29,12 +29,19 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 #setupBtn:active,#setupBtn.down,#startBtn.down{transform:translateY(5px);box-shadow:0 1px 0 #D9426A}
 #setupBtn:focus-visible{outline:3px solid #2A2140;outline-offset:4px}
 #setupWord{width:min(72vw,380px);height:auto;display:block}
-#loading{position:fixed;inset:0;z-index:9;background:#FFD9E4;display:grid;place-items:center}
-#loading .lbox{display:flex;flex-direction:column;align-items:center;gap:12px;font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;color:#2A2140}
-#loading p{margin:0;font-size:16px;font-weight:600}
-.ltrack{width:min(60vw,240px);height:10px;border-radius:99px;background:#FFC4D5;overflow:hidden}
-#loadFill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#FF9CC2,#FF5E87);transition:width .3s ease}
-#loadPct{font-size:14px;font-weight:600;color:#6E5A68;font-variant-numeric:tabular-nums}
+#loading{position:fixed;inset:0;z-index:9;background:#FFD9E4;display:grid;place-items:center;color:#2A2140}
+#loading .lbox{display:flex;flex-direction:column;align-items:center;gap:22px;width:min(78vw,320px)}
+#loadTitle svg{height:34px;width:auto;display:block}
+#loadPct svg{height:28px;width:auto;display:block;color:#FF5E87}
+.lwrap{position:relative;width:100%}
+.ltrack{height:26px;border-radius:99px;background:#fff;border:3px solid #FF9CC2;overflow:hidden;box-shadow:inset 0 2px 0 rgba(0,0,0,.05)}
+#loadFill{height:100%;width:0;border-radius:99px;
+  background:repeating-linear-gradient(-45deg,#FF7FA6 0 12px,#FF5E87 12px 24px);background-size:34px 34px;animation:candy .8s linear infinite}
+@keyframes candy{to{background-position:34px 0}}
+#loadStar{position:absolute;top:50%;left:0;width:40px;height:40px;margin:-20px 0 0 -20px;animation:hop .6s ease-in-out infinite alternate}
+#loadStar svg{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 2px rgba(0,0,0,.15))}
+@keyframes hop{from{transform:translateY(2px) rotate(-10deg)}to{transform:translateY(-8px) rotate(10deg)}}
+@media (prefers-reduced-motion:reduce){#loadFill,#loadStar{animation:none}}
 #intro{position:fixed;inset:0;z-index:50;background:#FFD9E4;display:grid;place-items:center;transition:opacity .4s}
 #intro.gone{opacity:0;pointer-events:none}
 #intro svg{width:min(100vw,100vh);height:min(100vw,100vh);display:block}
@@ -278,7 +285,9 @@ frame(0);requestAnimationFrame(tick);
 <div id="feed" aria-label="Video feed"></div>
 
 <div id="loading" hidden role="status" aria-live="polite">
-  <div class="lbox"><p>Getting videos ready</p><div class="ltrack"><div id="loadFill"></div></div><span id="loadPct">0%</span></div>
+  <div class="lbox"><div id="loadTitle"></div>
+    <div class="lwrap"><div class="ltrack"><div id="loadFill"></div></div><div id="loadStar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 16.9 6.3 20l1.2-6.4L2.8 9.2l6.4-.8z" fill="#FFD25E" stroke="#E8A93A" stroke-width="1.4" stroke-linejoin="round"/></svg></div></div>
+    <div id="loadPct" aria-label="0 percent"></div></div>
 </div>
 <div id="setup" hidden><button id="setupBtn" type="button" aria-label="Setup for your Tiny Swiper"><svg id="setupWord" viewBox="-6 -122 1301 175" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"><path transform="translate(26.0 -2) rotate(2) translate(-26.0 0)" d="M46 -94 Q39 -112 25 -112 Q6 -112 6 -86 Q6 -63 26 -57 Q48 -50 48 -27 Q48 2 25 2 Q8 2 3 -15"/><path transform="translate(86.0 2) rotate(-2) translate(-25.0 0)" d="M8 -41 L43 -41 Q44 -80 25 -80 Q6 -80 6 -38 Q6 2 26 2 Q38 2 44 -11"/><path transform="translate(137.0 1) rotate(2) translate(-17.0 0)" d="M15 -104 L14 -10 Q14 2 28 0 M3 -77 L31 -79"/><path transform="translate(187.5 -2) rotate(-2) translate(-24.5 0)" d="M7 -78 L7 -30 Q7 2 25 2 Q42 2 42 -30 M42 -78 L42 0"/><path transform="translate(246.5 -1) rotate(1.5) translate(-25.5 0)" d="M7 -78 L7 42 M7 -54 Q9 -80 26 -80 Q44 -80 44 -40 Q44 1 26 1 Q10 1 7 -22"/><path transform="translate(328.0 1) rotate(-1.5) translate(-17.0 0)" d="M31 -106 Q15 -114 14 -88 L13 0 M3 -77 L31 -79"/><path transform="translate(379.0 2) rotate(1.5) translate(-25.0 0)" d="M25 -80 Q6 -80 6 -39 Q6 2 25 2 Q44 2 44 -39 Q44 -80 25 -80 Z"/><path transform="translate(432.0 -2) rotate(2.5) translate(-19.0 0)" d="M7 -78 L7 0 M7 -48 Q12 -80 35 -78"/><path transform="translate(513.5 -2) rotate(2) translate(-23.5 0)" d="M6 -78 L6 -36 Q6 -14 23 -14 Q39 -14 40 -36 M40 -78 L40 16 Q40 40 20 40 Q7 40 3 30"/><path transform="translate(571.0 2) rotate(1.5) translate(-25.0 0)" d="M25 -80 Q6 -80 6 -39 Q6 2 25 2 Q44 2 44 -39 Q44 -80 25 -80 Z"/><path transform="translate(629.5 -2) rotate(-2) translate(-24.5 0)" d="M7 -78 L7 -30 Q7 2 25 2 Q42 2 42 -30 M42 -78 L42 0"/><path transform="translate(682.0 -2) rotate(2.5) translate(-19.0 0)" d="M7 -78 L7 0 M7 -48 Q12 -80 35 -78"/><path transform="translate(767.0 0) rotate(-2) translate(-26.0 0)" d="M3 -109 Q26 -114 50 -107 M27 -110 L25 0"/><path transform="translate(811.0 -3) rotate(3) translate(-9.0 0)" d="M9 -76 L9 0 M9 -103 L9 -103"/><path transform="translate(853.5 2) rotate(-1.5) translate(-24.5 0)" d="M7 -78 L7 0 M7 -52 Q10 -80 27 -80 Q42 -80 42 -55 L41 0"/><path transform="translate(910.5 -2) rotate(2) translate(-23.5 0)" d="M6 -78 L6 -36 Q6 -14 23 -14 Q39 -14 40 -36 M40 -78 L40 16 Q40 40 20 40 Q7 40 3 30"/><path transform="translate(999.0 -2) rotate(2) translate(-26.0 0)" d="M46 -94 Q39 -112 25 -112 Q6 -112 6 -86 Q6 -63 26 -57 Q48 -50 48 -27 Q48 2 25 2 Q8 2 3 -15"/><path transform="translate(1062.0 2) rotate(-1.5) translate(-28.0 0)" d="M4 -78 L13 0 L28 -52 L43 0 L52 -78"/><path transform="translate(1108.0 -3) rotate(3) translate(-9.0 0)" d="M9 -76 L9 0 M9 -103 L9 -103"/><path transform="translate(1151.5 -1) rotate(1.5) translate(-25.5 0)" d="M7 -78 L7 42 M7 -54 Q9 -80 26 -80 Q44 -80 44 -40 Q44 1 26 1 Q10 1 7 -22"/><path transform="translate(1211.0 2) rotate(-2) translate(-25.0 0)" d="M8 -41 L43 -41 Q44 -80 25 -80 Q6 -80 6 -38 Q6 2 26 2 Q38 2 44 -11"/><path transform="translate(1264.0 -2) rotate(2.5) translate(-19.0 0)" d="M7 -78 L7 0 M7 -48 Q12 -80 35 -78"/></g></svg></button></div>
 <div id="empty" class="screen" hidden>
@@ -665,8 +674,8 @@ function closeParent(start){
   const need=S.creators.filter(c=>c.on&&!c.auto.length&&!c.err);
   if(S.apiKey&&need.length)queuePull(need);
   if(start&&loadD<loadT){                        // still loading: show progress, then go to videos at 100%
-    paintBar(0);loadBar();$("loading").hidden=false;$("lock").hidden=true;
-    pullChain.then(()=>{loadBar(100);setTimeout(()=>{$("loading").hidden=true;shownPct=0;$("lock").hidden=false;loadT=loadD=0;if(ytReady&&!parentOpen)render()},350)});
+    startLoading(()=>{if(ytReady&&!parentOpen)render()});
+    pullChain.then(()=>{chainDone=true});
     return;
   }
   if(need.length)pullChain.then(()=>{loadT=loadD=0;if(ytReady&&!parentOpen)render()});
@@ -674,7 +683,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.10.28 · build 13:36";
+const APP_VERSION="2026.10.28 · build 13:50";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
@@ -721,16 +730,42 @@ $("allOn").addEventListener("click",()=>{S.creators.forEach(c=>c.on=true);save()
 $("allOff").addEventListener("click",()=>{S.creators.forEach(c=>c.on=false);save();drawCreators()});
 
 let pullChain=Promise.resolve(),loadT=0,loadD=0;
-let shownPct=0,creep=0;
-function paintBar(p){shownPct=p;$("loadFill").style.width=p+"%";$("loadPct").textContent=Math.round(p)+"%"}
-function loadBar(pct){
-  if(pct!==undefined){clearInterval(creep);creep=0;paintBar(pct);return}
-  const real=loadT?loadD/loadT*100:0;
-  if(real>shownPct)paintBar(real);
-  if(!creep)creep=setInterval(()=>{                 // ease forward between channels so the bar never sits still
-    const r=loadT?loadD/loadT*100:0,cap=Math.min(99,r+(loadT?100/loadT:100)*.9);
-    if(shownPct<cap)paintBar(Math.min(cap,shownPct+Math.max(.4,(cap-shownPct)*.08)));
-  },120);
+const GLYPHS={"G": [52, "M46 -94 Q39 -112 25 -112 Q6 -112 6 -55 Q6 2 26 2 Q46 2 46 -40 L28 -40", 2, -1], "e": [50, "M8 -41 L43 -41 Q44 -80 25 -80 Q6 -80 6 -38 Q6 2 26 2 Q38 2 44 -11", -2, 2], "t": [34, "M15 -104 L14 -10 Q14 2 28 0 M3 -77 L31 -79", 2, 1], "i": [18, "M9 -76 L9 0 M9 -103 L9 -103", 3, -3], "n": [49, "M7 -78 L7 0 M7 -52 Q10 -80 27 -80 Q42 -80 42 -55 L41 0", -1.5, 2], "g": [50, "M42 -78 L42 18 Q42 42 22 42 Q9 42 5 32 M42 -40 Q42 -80 24 -80 Q6 -80 6 -41 Q6 -4 24 -4 Q42 -4 42 -40", 2, -1], "v": [48, "M4 -78 L24 0 L44 -78", -2, 1], "d": [50, "M42 -112 L42 0 M42 -38 Q42 -80 24 -80 Q6 -80 6 -39 Q6 2 24 2 Q42 2 42 -38", 1.5, -1], "o": [50, "M25 -80 Q6 -80 6 -39 Q6 2 25 2 Q44 2 44 -39 Q44 -80 25 -80 Z", 1.5, 2], "s": [46, "M40 -68 Q34 -80 23 -80 Q7 -80 7 -62 Q7 -48 24 -43 Q42 -38 42 -20 Q42 2 23 2 Q9 2 4 -10", -2, -1], "r": [38, "M7 -78 L7 0 M7 -48 Q12 -80 35 -78", 2.5, -2], "a": [50, "M42 -78 L42 0 M42 -38 Q42 -80 24 -80 Q6 -80 6 -39 Q6 2 24 2 Q42 2 42 -38", -1.5, 2], "y": [47, "M6 -78 L6 -36 Q6 -14 23 -14 Q39 -14 40 -36 M40 -78 L40 16 Q40 40 20 40 Q7 40 3 30", 2, -2], "0": [50, "M25 -110 Q6 -110 6 -55 Q6 2 25 2 Q44 2 44 -55 Q44 -110 25 -110 Z", 1, 0], "1": [36, "M8 -92 L24 -110 L24 0", -1, 0], "2": [52, "M7 -90 Q12 -112 27 -112 Q45 -112 45 -86 Q45 -66 6 0 L46 0", 1.5, 0], "3": [52, "M7 -98 Q14 -112 27 -112 Q44 -112 44 -88 Q44 -60 22 -60 Q46 -60 46 -30 Q46 2 25 2 Q10 2 4 -14", -1.5, 0], "4": [52, "M36 0 L36 -110 L4 -36 L48 -36", 1, 0], "5": [52, "M43 -110 L12 -110 L9 -62 Q15 -70 27 -70 Q46 -70 46 -35 Q46 2 25 2 Q10 2 4 -14", -1, 0], "6": [51, "M40 -104 Q33 -112 25 -112 Q6 -112 6 -50 Q6 2 26 2 Q45 2 45 -32 Q45 -66 26 -66 Q12 -66 7 -50", 1.5, 0], "7": [50, "M5 -110 L46 -110 L20 0", -1, 0], "8": [50, "M25 -60 Q8 -62 8 -86 Q8 -112 25 -112 Q42 -112 42 -86 Q42 -62 25 -60 Q46 -58 46 -29 Q46 2 25 2 Q4 2 4 -29 Q4 -58 25 -60 Z", 1, 0], "9": [50, "M10 -8 Q17 2 25 2 Q44 2 44 -60 Q44 -112 24 -112 Q5 -112 5 -78 Q5 -44 24 -44 Q38 -44 43 -60", -1.5, 0], "%": [58, "M14 -110 Q4 -110 4 -92 Q4 -74 14 -74 Q24 -74 24 -92 Q24 -110 14 -110 Z M46 -112 L12 2 M44 -36 Q34 -36 34 -18 Q34 0 44 0 Q54 0 54 -18 Q54 -36 44 -36 Z", 0, 0]};
+// draws text in the hand-drawn logo lettering as an SVG
+function lettering(text,cls){
+  let x=0,out="";
+  for(const ch of text){
+    if(ch===" "){x+=30;continue}
+    const g=GLYPHS[ch];if(!g)continue;const [w,d,rot,dy]=g;
+    out+=`<path transform="translate(${x+w/2} ${dy}) rotate(${rot}) translate(${-w/2} 0)" d="${d}"/>`;x+=w+9;
+  }
+  return `<svg class="${cls||""}" viewBox="-8 -124 ${x+7} 178" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round">${out}</g></svg>`;
+}
+$("loadTitle").innerHTML=lettering("Getting videos ready");
+let shownPct=-1,loadTimer=0,loadStart=0,chainDone=false,afterLoad=null;
+const MIN_LOAD_MS=2600;   // keep the bar on screen long enough to watch it fill
+function paintBar(p){
+  const r=Math.round(p);
+  $("loadFill").style.width=p+"%";$("loadStar").style.left=p+"%";
+  if(r!==Math.round(shownPct)){$("loadPct").innerHTML=lettering(r+"%");$("loadPct").setAttribute("aria-label",r+" percent")}
+  shownPct=p;
+}
+function loadBar(){}       // progress is read from loadD/loadT by the timer below
+function startLoading(done){
+  afterLoad=done;chainDone=false;loadStart=performance.now();shownPct=-1;paintBar(0);
+  $("loading").hidden=false;$("lock").hidden=true;
+  clearInterval(loadTimer);
+  loadTimer=setInterval(()=>{
+    const real=loadT?loadD/loadT*100:0,share=loadT?100/loadT:100;
+    const goal=chainDone?100:Math.min(95,real+share*.9);
+    const timeCap=(performance.now()-loadStart)/MIN_LOAD_MS*100;
+    const target=Math.min(goal,timeCap);
+    if(shownPct<target)paintBar(Math.min(target,shownPct+Math.max(.25,(target-shownPct)*.08)));
+    if(chainDone&&shownPct>=99.6){
+      clearInterval(loadTimer);paintBar(100);
+      setTimeout(()=>{$("loading").hidden=true;$("lock").hidden=false;loadT=loadD=0;afterLoad&&afterLoad()},600);
+    }
+  },50);
 }
 function queuePull(list){
   S.apiKey=$("apiKey").value.trim();save();
