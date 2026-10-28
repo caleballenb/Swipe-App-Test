@@ -20,9 +20,14 @@
 html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:var(--body);overscroll-behavior:none}
 button{font:inherit;cursor:pointer}
 [hidden]{display:none!important}
-#setup{position:fixed;inset:0;z-index:7;width:100%;border:0;background:#ffd9e4;color:#2A2140;
+#setup{position:fixed;inset:0;z-index:7;background:#FFF6F9;display:grid;place-items:center;
   font:600 24px/1.3 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 max(24px,env(safe-area-inset-left,0px));text-align:center}
-#intro{position:fixed;inset:0;z-index:50;background:#ffd9e4;display:grid;place-items:center;transition:opacity .4s}
+#setupBtn{border:0;border-radius:999px;padding:22px 30px;color:#fff;cursor:pointer;
+  background:linear-gradient(135deg,#FF9CC2,#FF5E87);box-shadow:0 6px 0 #D9426A,0 14px 28px rgba(255,94,135,.35);transition:transform .1s,box-shadow .1s}
+#setupBtn:active{transform:translateY(5px);box-shadow:0 1px 0 #D9426A,0 6px 14px rgba(255,94,135,.3)}
+#setupBtn:focus-visible{outline:3px solid #2A2140;outline-offset:4px}
+#setupWord{width:min(72vw,380px);height:auto;display:block}
+#intro{position:fixed;inset:0;z-index:50;background:#FFF6F9;display:grid;place-items:center;transition:opacity .4s}
 #intro.gone{opacity:0;pointer-events:none}
 #intro svg{width:min(100vw,100vh);height:min(100vw,100vh);display:block}
 
@@ -239,7 +244,7 @@ frame(0);requestAnimationFrame(tick);
 <div id="stage"><div class="slot" id="slotA"><div id="pA"></div></div><div class="slot" id="slotB"><div id="pB"></div></div></div>
 <div id="feed" aria-label="Video feed"></div>
 
-<button id="setup" type="button" hidden>Setup for your Tiny Swiper</button>
+<div id="setup" hidden><button id="setupBtn" type="button" aria-label="Setup for your Tiny Swiper"><svg id="setupWord" viewBox="-6 -122 1301 175" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"><path transform="translate(26.0 -2) rotate(2) translate(-26.0 0)" d="M46 -94 Q39 -112 25 -112 Q6 -112 6 -86 Q6 -63 26 -57 Q48 -50 48 -27 Q48 2 25 2 Q8 2 3 -15"/><path transform="translate(86.0 2) rotate(-2) translate(-25.0 0)" d="M8 -41 L43 -41 Q44 -80 25 -80 Q6 -80 6 -38 Q6 2 26 2 Q38 2 44 -11"/><path transform="translate(137.0 1) rotate(2) translate(-17.0 0)" d="M15 -104 L14 -10 Q14 2 28 0 M3 -77 L31 -79"/><path transform="translate(187.5 -2) rotate(-2) translate(-24.5 0)" d="M7 -78 L7 -30 Q7 2 25 2 Q42 2 42 -30 M42 -78 L42 0"/><path transform="translate(246.5 -1) rotate(1.5) translate(-25.5 0)" d="M7 -78 L7 42 M7 -54 Q9 -80 26 -80 Q44 -80 44 -40 Q44 1 26 1 Q10 1 7 -22"/><path transform="translate(328.0 1) rotate(-1.5) translate(-17.0 0)" d="M31 -106 Q15 -114 14 -88 L13 0 M3 -77 L31 -79"/><path transform="translate(379.0 2) rotate(1.5) translate(-25.0 0)" d="M25 -80 Q6 -80 6 -39 Q6 2 25 2 Q44 2 44 -39 Q44 -80 25 -80 Z"/><path transform="translate(432.0 -2) rotate(2.5) translate(-19.0 0)" d="M7 -78 L7 0 M7 -48 Q12 -80 35 -78"/><path transform="translate(513.5 -2) rotate(2) translate(-23.5 0)" d="M6 -78 L6 -36 Q6 -14 23 -14 Q39 -14 40 -36 M40 -78 L40 16 Q40 40 20 40 Q7 40 3 30"/><path transform="translate(571.0 2) rotate(1.5) translate(-25.0 0)" d="M25 -80 Q6 -80 6 -39 Q6 2 25 2 Q44 2 44 -39 Q44 -80 25 -80 Z"/><path transform="translate(629.5 -2) rotate(-2) translate(-24.5 0)" d="M7 -78 L7 -30 Q7 2 25 2 Q42 2 42 -30 M42 -78 L42 0"/><path transform="translate(682.0 -2) rotate(2.5) translate(-19.0 0)" d="M7 -78 L7 0 M7 -48 Q12 -80 35 -78"/><path transform="translate(767.0 0) rotate(-2) translate(-26.0 0)" d="M3 -109 Q26 -114 50 -107 M27 -110 L25 0"/><path transform="translate(811.0 -3) rotate(3) translate(-9.0 0)" d="M9 -76 L9 0 M9 -103 L9 -103"/><path transform="translate(853.5 2) rotate(-1.5) translate(-24.5 0)" d="M7 -78 L7 0 M7 -52 Q10 -80 27 -80 Q42 -80 42 -55 L41 0"/><path transform="translate(910.5 -2) rotate(2) translate(-23.5 0)" d="M6 -78 L6 -36 Q6 -14 23 -14 Q39 -14 40 -36 M40 -78 L40 16 Q40 40 20 40 Q7 40 3 30"/><path transform="translate(999.0 -2) rotate(2) translate(-26.0 0)" d="M46 -94 Q39 -112 25 -112 Q6 -112 6 -86 Q6 -63 26 -57 Q48 -50 48 -27 Q48 2 25 2 Q8 2 3 -15"/><path transform="translate(1062.0 2) rotate(-1.5) translate(-28.0 0)" d="M4 -78 L13 0 L28 -52 L43 0 L52 -78"/><path transform="translate(1108.0 -3) rotate(3) translate(-9.0 0)" d="M9 -76 L9 0 M9 -103 L9 -103"/><path transform="translate(1151.5 -1) rotate(1.5) translate(-25.5 0)" d="M7 -78 L7 42 M7 -54 Q9 -80 26 -80 Q44 -80 44 -40 Q44 1 26 1 Q10 1 7 -22"/><path transform="translate(1211.0 2) rotate(-2) translate(-25.0 0)" d="M8 -41 L43 -41 Q44 -80 25 -80 Q6 -80 6 -38 Q6 2 26 2 Q38 2 44 -11"/><path transform="translate(1264.0 -2) rotate(2.5) translate(-19.0 0)" d="M7 -78 L7 0 M7 -48 Q12 -80 35 -78"/></g></svg></button></div>
 <div id="empty" class="screen" hidden>
   <div class="wave">🔒</div>
   <h1>Grown-up setup</h1>
@@ -293,6 +298,7 @@ frame(0);requestAnimationFrame(tick);
     <div class="sec">
       <h3>Appearance</h3>
       <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span class="t">Dark mode</span><span class="sw"><input type="checkbox" id="darkMode" aria-label="Dark mode"><i></i></span></label>
+          <p class="foot" id="appVersion" style="padding-left:18px;margin-top:24px"></p>
     </div>
   </div>
 
@@ -410,7 +416,7 @@ function colorOf(id){return COLORS[S.creators.findIndex(c=>c.id===id)%COLORS.len
 
 function needsSetup(){return !S.apiKey||!S.creators.some(c=>c.on)}
 function showSetup(){const on=needsSetup()&&!parentOpen;$("setup").hidden=!on;$("setup").classList.toggle("light",S.theme==="light");$("lock").hidden=on||parentOpen;return on}
-$("setup").addEventListener("click",openParent);
+$("setupBtn").addEventListener("click",openParent);
 showSetup();
 function render(){
   slots.forEach(s=>{s.idx=-1;s.primed=false;try{s.p&&s.p.pauseVideo()}catch(e){}});showSlot(null);
@@ -593,6 +599,8 @@ function closeParent(){
   else if(ytReady)render();
 }
 $("closeParent").addEventListener("click",closeParent);
+const APP_VERSION="2026.10.28 · build 12:08";
+$("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme==="light");$("darkMode").checked=S.theme!=="light"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
 function showView(id){$("vMain").hidden=id!=="vMain";$("vChannels").hidden=id!=="vChannels";$("parent").scrollTop=0}
