@@ -439,17 +439,23 @@ async function fetchThumbs(){
 }
 window.onYouTubeIframeAPIReady=async()=>{
   ytReady=true;
-  if(S.apiKey)await fetchThumbs();
+  const on=()=>S.creators.filter(c=>c.on);
+  const haveClips=on().some(c=>c.auto.length);
   const stale=Date.now()-(S.lastPull||0)>SIX_HOURS;
-  const empty=S.creators.some(c=>c.on&&!c.auto.length);
-  if(S.apiKey&&(stale||empty)){
-    if(!S.creators.some(c=>c.auto.length)){$("empty").querySelector("h1").textContent="Loading videos…";$("empty").hidden=false}
-    let shown=false;
-    await pullAll(stale?S.creators.filter(c=>c.on):S.creators.filter(c=>c.on&&!c.auto.length),
-      ()=>{if(!S.creators.some(c=>c.on&&c.auto.length&&c.auto!==undefined))return;if(active<0&&!parentOpen){shown=true;render()}});
-    if(shown&&active>=0)return;
+  if(haveClips){                                   // play saved videos right away
+    render();
+    if(S.apiKey){fetchThumbs();if(stale)pullAll(on())}   // refresh quietly for next time
+    return;
   }
-  render();
+  if(!S.apiKey){render();return}
+  $("empty").querySelector("h1").textContent="Loading videos…";
+  $("empty").querySelector("p").textContent="";$("empty").hidden=false;
+  let shown=false;
+  const show=()=>{if(!shown&&!parentOpen){shown=true;render()}};
+  await pullAll(on(),show,1);                      // quick first pass: one page per channel
+  if(!shown)render();
+  fetchThumbs();
+  pullAll(on());                                   // fill up to 100 per channel in the background
 };
 const tag=document.createElement("script");tag.src="https://www.youtube.com/iframe_api";document.head.appendChild(tag);
 
@@ -550,7 +556,7 @@ async function api(path,params){
 }
 function secs(iso){const m=iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)||[];return (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0)}
 const PER_CREATOR=100;
-async function pullCreator(c){
+async function pullCreator(c,maxPages=10){
   await (async()=>{ if(c.channelId)return;
     let j=c.handle?await api("channels",{part:"id",forHandle:c.handle}):{};
     if(j.items&&j.items.length)c.channelId=j.items[0].id;
@@ -582,7 +588,7 @@ async function pullCreator(c){
         }
       }
       token=j.nextPageToken||"";pages++;
-    }while(token&&out.length<PER_CREATOR&&pages<10);
+    }while(token&&out.length<PER_CREATOR&&pages<maxPages);
     return out.slice(0,PER_CREATOR);
   }
   let clips=[],seenShorts=0,notKids=0;
@@ -590,7 +596,7 @@ async function pullCreator(c){
   if(!clips.length)throw new Error(!seenShorts?"This channel has no Shorts":notKids===seenShorts?"Shorts aren't marked Made for Kids":"No playable Shorts");
   return clips;
 }
-async function pullAll(list,onFirst){
+async function pullAll(list,onFirst,maxPages=10){
   if(!S.apiKey||!list.length)return;
   const st=$("status"),btn=$("refresh");btn.disabled=true;let total=0,done=0,fired=false;
   st.textContent=`Loading ${list.length} channel${list.length===1?"":"s"}…`;
@@ -598,7 +604,7 @@ async function pullAll(list,onFirst){
   async function worker(){
     while(queue.length){
       const c=queue.shift();
-      try{c.auto=await pullCreator(c);c.err="";total+=c.auto.length}
+      try{const got=await pullCreator(c,maxPages);if(got.length>=c.auto.length||maxPages>1)c.auto=got;c.err="";total+=c.auto.length}
       catch(e){c.auto=[];c.err=e.message}
       done++;st.textContent=`Loaded ${done} of ${list.length} channels…`;
       save();if(parentOpen)drawCreators();
