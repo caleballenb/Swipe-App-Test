@@ -23,9 +23,12 @@ button{font:inherit;cursor:pointer}
 #feed::-webkit-scrollbar{display:none}
 .slide{position:relative;height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
 .pbox{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-.pbox iframe,.pbox>div{width:100%;height:100%;border:0}
+.pbox{overflow:hidden}
+.pbox iframe,.pbox>div{width:100%;height:100%;border:0;transform:scale(var(--crop,1.22));transform-origin:50% 50%}
 .shield{position:absolute;inset:0;z-index:2}
-.tag{position:absolute;left:14px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:3;
+.cover{position:absolute;inset:0;z-index:1;background:#ffd9e4;transition:opacity .12s}
+.cover.off{opacity:0;pointer-events:none}
+.tag{position:absolute;left:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:3;border:0;text-align:left;
   display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;
   background:rgba(0,0,0,.55);color:#fff;font:700 15px/1 var(--display);backdrop-filter:blur(6px)}
 .tag i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;color:var(--ink)}
@@ -39,6 +42,14 @@ button{font:inherit;cursor:pointer}
   touch-action:none;-webkit-user-select:none;user-select:none}
 #lock svg{position:absolute;inset:0}
 #lock circle.r{transition:stroke-dashoffset .1s linear}
+
+.modal{position:fixed;inset:0;z-index:8;display:grid;place-items:center;padding:24px;background:rgba(20,16,40,.55)}
+.modal .card{width:min(100%,340px);background:#fff;border-radius:24px;padding:24px 20px 20px;text-align:center;display:flex;flex-direction:column;gap:18px}
+.modal p{margin:0;font:800 24px/1.15 var(--display);color:var(--ink);text-wrap:balance}
+.modal .btns{display:flex;gap:12px}
+.modal button{flex:1;border:0;border-radius:16px;padding:14px;font:800 20px/1 var(--display)}
+.modal .yes{background:var(--leaf);color:#fff;box-shadow:0 5px 0 #1d8a55}
+.modal .no{background:var(--berry);color:#fff;box-shadow:0 5px 0 #c94357}
 
 /* ---------- full-screen messages ---------- */
 .screen{position:fixed;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
@@ -100,6 +111,13 @@ input[type=text],input[type=number],input[type=password]{width:100%;padding:10px
   <div class="wave">👋</div>
   <h1>All done! Bye-bye!</h1>
   <p>That's all the videos for now. A grown-up can tap the lock to start more.</p>
+</div>
+
+<div id="visit" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="visitQ">
+  <div class="card">
+    <p id="visitQ"></p>
+    <div class="btns"><button type="button" class="yes" id="visitYes">Yes</button><button type="button" class="no" id="visitNo">No</button></div>
+  </div>
 </div>
 
 <button id="sound" type="button" hidden>🔊 Tap for sound</button>
@@ -197,49 +215,83 @@ function render(){
   feed.forEach((clip,i)=>{
     const c=creatorOf(clip.creator)||{name:"?"};
     const s=document.createElement("section");s.className="slide";s.dataset.i=i;
-    s.innerHTML=`<div class="pbox"><div id="p${i}"></div></div><div class="shield"></div>
-      <div class="tag"><i style="background:${colorOf(clip.creator)}">${c.name[0]}</i><div>${esc(c.name)}<small>Original on YouTube</small></div></div>`;
+    s.innerHTML=`<div class="pbox"><div id="p${i}"></div></div><div class="cover"></div><div class="shield"></div>
+      <button type="button" class="tag"><i style="background:${colorOf(clip.creator)}">${esc(c.name[0])}</i><div>${esc(c.name)}<small>Original on YouTube</small></div></button>`;
     s.querySelector(".shield").addEventListener("click",()=>togglePlay(i));
+    s.querySelector(".tag").addEventListener("click",()=>askVisit(clip.creator));
     feedEl.appendChild(s);
   });
-  io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting&&e.intersectionRatio>.6)setActive(+e.target.dataset.i)})},{root:feedEl,threshold:[.6]});
+  io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting&&e.intersectionRatio>=.5)setActive(+e.target.dataset.i)})},{root:feedEl,threshold:[.5]});
   feedEl.querySelectorAll(".slide").forEach(s=>io.observe(s));
 }
 function esc(t){return String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
 
+const AHEAD=2;            // players kept warm after the current one
+let primed={};            // buffered and paused at the start, ready to play
+function cover(i,on){const c=feedEl.querySelector(`.slide[data-i="${i}"] .cover`);if(c)c.classList.toggle("off",!on)}
 function setActive(i){
   if(i===active||parentOpen)return;
-  active=i;
+  const prev=active;active=i;
   if(!seen.has(i)){seen.add(i);
     if(S.limit>0&&seen.size>S.limit){pauseAll();$("done").hidden=false;return}
   }
-  for(const k of Object.keys(players)){const n=+k;if(Math.abs(n-i)>1)destroyPlayer(n)}
-  [i-1,i,i+1].forEach(n=>{if(n>=0&&n<feed.length&&!players[n])makePlayer(n)});
-  pauseAll(i);
-  if(ready[i])startClip(i);
+  startClip(i);                                   // play first, housekeeping after
+  if(prev>=0&&prev!==i){try{players[prev].pauseVideo()}catch(e){}}
+  for(const k of Object.keys(players)){const n=+k;if(n<i-1||n>i+AHEAD)destroyPlayer(n)}
+  for(let n=i-1;n<=i+AHEAD;n++){if(n>=0&&n<feed.length&&!players[n])makePlayer(n)}
 }
 function makePlayer(i){
   if(!ytReady)return;
   const clip=feed[i];
   const vars={autoplay:0,controls:0,playsinline:1,rel:0,fs:0,disablekb:1,iv_load_policy:3,modestbranding:1,mute:1};
   if(S.maxSec>0)vars.end=S.maxSec;
+  cover(i,true);
   players[i]=new YT.Player("p"+i,{videoId:clip.v,width:"100%",height:"100%",playerVars:vars,
     events:{
-      onReady:()=>{ready[i]=true;if(i===active&&!parentOpen)startClip(i)},
-      onStateChange:e=>{if(e.data===0&&i===active)goTo(i+1)},
+      onReady:()=>{ready[i]=true;
+        if(i===active&&!parentOpen)startClip(i);
+        else{try{players[i].mute();players[i].playVideo()}catch(e){}}   // pre-buffer silently
+      },
+      onStateChange:e=>{
+        if(e.data===1){
+          if(i===active&&!parentOpen)cover(i,false);
+          else if(!primed[i]){primed[i]=true;try{players[i].pauseVideo();players[i].seekTo(0,true)}catch(x){}}
+        }
+        if(e.data===0&&i===active)goTo(i+1);
+      },
       onError:()=>{if(i===active)goTo(i+1)}
     }});
 }
 function destroyPlayer(n){
   n=+n;try{players[n].destroy()}catch(e){}
-  delete players[n];delete ready[n];
+  delete players[n];delete ready[n];delete primed[n];
   const s=feedEl.querySelector(`.slide[data-i="${n}"] .pbox`);
   if(s)s.innerHTML=`<div id="p${n}"></div>`;
+  cover(n,true);
 }
 function startClip(i){
-  const p=players[i];if(!p)return;
-  try{p.seekTo(0,true);if(muted)p.mute();else{p.unMute();p.setVolume(100)}p.playVideo()}catch(e){}
+  const p=players[i];if(!p||!ready[i])return;
+  try{
+    if(!primed[i])p.seekTo(0,true);
+    primed[i]=true;
+    if(muted)p.mute();else{p.unMute();p.setVolume(100)}
+    p.playVideo();
+    if(p.getPlayerState()===1)cover(i,false);
+  }catch(e){}
 }
+let visitTarget=null;
+function askVisit(id){
+  const c=creatorOf(id);if(!c)return;visitTarget=c;
+  try{players[active].pauseVideo()}catch(e){}
+  $("visitQ").textContent=`Visit ${c.name} channel?`;
+  $("visit").hidden=false;
+}
+function closeVisit(){$("visit").hidden=true;visitTarget=null;startClip(active)}
+$("visitNo").addEventListener("click",closeVisit);
+$("visitYes").addEventListener("click",()=>{
+  const c=visitTarget;$("visit").hidden=true;visitTarget=null;
+  if(c)window.open("https://www.youtube.com/"+c.handle,"_blank");
+});
 function pauseAll(except){for(const k in players){if(+k!==except){try{players[k].pauseVideo()}catch(e){}}}}
 function togglePlay(i){
   if(muted){unmute();return}
@@ -320,28 +372,35 @@ async function api(path,params){
   return j;
 }
 function secs(iso){const m=iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)||[];return (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0)}
+const PER_CREATOR=100;
 async function pullCreator(c){
   if(!c.channelId){
     const j=await api("channels",{part:"id",forHandle:c.handle});
     if(!j.items||!j.items.length)throw new Error("Channel not found");
     c.channelId=j.items[0].id;
   }
-  const base=c.channelId.slice(2);let ids=[],shortsList=true;
-  try{
-    const j=await api("playlistItems",{part:"contentDetails",playlistId:"UUSH"+base,maxResults:50});
-    ids=j.items.map(x=>x.contentDetails.videoId);
-  }catch(e){shortsList=false}
-  if(!ids.length){
-    shortsList=false;
-    const j=await api("playlistItems",{part:"contentDetails",playlistId:"UU"+base,maxResults:50});
-    ids=j.items.map(x=>x.contentDetails.videoId);
+  const base=c.channelId.slice(2),f=(c.filter||"").toLowerCase();
+  async function walk(playlistId,maxSec){
+    const out=[];let token="",pages=0;
+    do{
+      const params={part:"contentDetails",playlistId,maxResults:50};if(token)params.pageToken=token;
+      const j=await api("playlistItems",params);
+      const ids=j.items.map(x=>x.contentDetails.videoId);
+      if(ids.length){
+        const v=await api("videos",{part:"status,contentDetails,snippet",id:ids.join(",")});
+        for(const x of v.items){
+          if(x.status.embeddable&&secs(x.contentDetails.duration)<=maxSec&&(!f||x.snippet.title.toLowerCase().includes(f)))
+            out.push({v:x.id,t:x.snippet.title});
+        }
+      }
+      token=j.nextPageToken||"";pages++;
+    }while(token&&out.length<PER_CREATOR&&pages<10);
+    return out.slice(0,PER_CREATOR);
   }
-  if(!ids.length)return [];
-  const j=await api("videos",{part:"status,contentDetails,snippet",id:ids.join(",")});
-  const f=(c.filter||"").toLowerCase();
-  return j.items.filter(v=>v.status.embeddable&&secs(v.contentDetails.duration)<=(shortsList?180:60)
-      &&(!f||v.snippet.title.toLowerCase().includes(f)))
-    .slice(0,25).map(v=>({v:v.id,t:v.snippet.title}));
+  let clips=[];
+  try{clips=await walk("UUSH"+base,180)}catch(e){}
+  if(!clips.length)clips=await walk("UU"+base,60);
+  return clips;
 }
 async function pullAll(list){
   if(!S.apiKey||!list.length)return;
