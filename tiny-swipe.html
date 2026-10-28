@@ -24,11 +24,11 @@ button{font:inherit;cursor:pointer}
 .slide{position:relative;height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
 .pbox{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 .pbox{overflow:hidden}
-.pbox iframe,.pbox>div{width:100%;height:100%;border:0;transform:scale(var(--crop,1.22));transform-origin:50% 50%}
+.pbox iframe,.pbox>div{width:100%;height:100%;border:0;transform:scale(var(--crop,1.14));transform-origin:0 0}
 .shield{position:absolute;inset:0;z-index:2}
 .cover{position:absolute;inset:0;z-index:1;background:#ffd9e4;transition:opacity .12s}
 .cover.off{opacity:0;pointer-events:none}
-.tag{position:absolute;left:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:3;border:0;text-align:left;
+.tag{position:absolute;left:calc(22% + 6px);top:calc(7.4% - 20px);z-index:3;border:0;text-align:left;
   display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;
   background:rgba(0,0,0,.55);color:#fff;font:700 15px/1 var(--display);backdrop-filter:blur(6px)}
 .tag i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;color:var(--ink)}
