@@ -305,6 +305,13 @@ function render(){
   feedEl.innerHTML="";feedEl.scrollTop=0;
   $("done").hidden=true;
   $("empty").hidden=feed.length>0;
+  if(!feed.length){
+    const on=S.creators.filter(c=>c.on),bad=on.find(c=>c.err);
+    $("empty").querySelector("h1").textContent=S.apiKey?"No videos yet":"Grown-up setup";
+    $("empty").querySelector("p").textContent=!S.apiKey?"Tap the lock, then add your API key in Settings.":
+      !on.length?"No channels are on. Tap the lock and turn some on in Channels.":
+      bad?`${bad.name}: ${bad.err}. Tap the lock to check Channels.`:"Tap the lock and choose Refresh videos.";
+  }
   $("sound").hidden=!feed.length||!muted;
   feed.forEach((clip,i)=>{
     const c=creatorOf(clip.creator)||{name:"?"};
@@ -437,7 +444,10 @@ window.onYouTubeIframeAPIReady=async()=>{
   const empty=S.creators.some(c=>c.on&&!c.auto.length);
   if(S.apiKey&&(stale||empty)){
     if(!S.creators.some(c=>c.auto.length)){$("empty").querySelector("h1").textContent="Loading videos…";$("empty").hidden=false}
-    await pullAll(stale?S.creators.filter(c=>c.on):S.creators.filter(c=>c.on&&!c.auto.length));
+    let shown=false;
+    await pullAll(stale?S.creators.filter(c=>c.on):S.creators.filter(c=>c.on&&!c.auto.length),
+      ()=>{if(!S.creators.some(c=>c.on&&c.auto.length&&c.auto!==undefined))return;if(active<0&&!parentOpen){shown=true;render()}});
+    if(shown&&active>=0)return;
   }
   render();
 };
@@ -566,6 +576,7 @@ async function pullCreator(c){
       if(ids.length){
         const v=await api("videos",{part:"status,contentDetails,snippet",id:ids.join(",")});
         for(const x of v.items){
+          seenShorts++;if(x.status.madeForKids!==true)notKids++;
           if(x.status.embeddable&&x.status.madeForKids===true&&secs(x.contentDetails.duration)<=maxSec&&(!f||x.snippet.title.toLowerCase().includes(f)))
             out.push({v:x.id,t:x.snippet.title});
         }
@@ -574,21 +585,29 @@ async function pullCreator(c){
     }while(token&&out.length<PER_CREATOR&&pages<10);
     return out.slice(0,PER_CREATOR);
   }
-  let clips=[];
-  try{clips=await walk("UUSH"+base,180)}catch(e){}   // true Shorts only, so YouTube uses the Shorts layout
+  let clips=[],seenShorts=0,notKids=0;
+  try{clips=await walk("UUSH"+base,180)}catch(e){ if(!/not ?found/i.test(e.message))throw e }   // true Shorts only
+  if(!clips.length)throw new Error(!seenShorts?"This channel has no Shorts":notKids===seenShorts?"Shorts aren't marked Made for Kids":"No playable Shorts");
   return clips;
 }
-async function pullAll(list){
+async function pullAll(list,onFirst){
   if(!S.apiKey||!list.length)return;
-  const st=$("status"),btn=$("refresh");btn.disabled=true;let total=0;
-  for(const [n,c] of list.entries()){
-    st.textContent=`Loading ${c.name} (${n+1} of ${list.length})…`;
-    try{c.auto=await pullCreator(c);c.err=c.auto.length?"":"No kids-safe Shorts found";total+=c.auto.length}
-    catch(e){c.err=e.message}
-    save();if(parentOpen)drawCreators();
+  const st=$("status"),btn=$("refresh");btn.disabled=true;let total=0,done=0,fired=false;
+  st.textContent=`Loading ${list.length} channel${list.length===1?"":"s"}…`;
+  const queue=list.slice();
+  async function worker(){
+    while(queue.length){
+      const c=queue.shift();
+      try{c.auto=await pullCreator(c);c.err="";total+=c.auto.length}
+      catch(e){c.auto=[];c.err=e.message}
+      done++;st.textContent=`Loaded ${done} of ${list.length} channels…`;
+      save();if(parentOpen)drawCreators();
+      if(!fired&&total&&onFirst){fired=true;onFirst()}
+    }
   }
+  await Promise.all([worker(),worker(),worker(),worker()]);
   if(list.length===S.creators.filter(c=>c.on).length)S.lastPull=Date.now();
-  save();st.textContent=`Loaded ${total} clips.`;btn.disabled=false;
+  save();st.textContent=`Loaded ${total} videos.`;btn.disabled=false;
 }
 $("refresh").addEventListener("click",async()=>{
   S.apiKey=$("apiKey").value.trim();save();
