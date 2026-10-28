@@ -20,6 +20,8 @@
 html,body{height:100%;margin:0;background:#000;color:var(--ink);font-family:var(--body);overscroll-behavior:none}
 button{font:inherit;cursor:pointer}
 [hidden]{display:none!important}
+button,[role=button],input,label{-webkit-tap-highlight-color:transparent}
+button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline:none}
 #setup{position:fixed;inset:0;z-index:7;background:#FFD9E4;display:grid;place-items:center;
   font:600 24px/1.3 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 max(24px,env(safe-area-inset-left,0px));text-align:center}
 #setupBtn{border:0;border-radius:999px;padding:22px 30px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;
@@ -660,7 +662,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.10.28 · build 13:08";
+const APP_VERSION="2026.10.28 · build 13:12";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
