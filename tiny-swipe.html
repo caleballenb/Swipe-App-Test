@@ -252,7 +252,7 @@ let S;
 function load(){
   try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
   if(!S||!S.creators){S={apiKey:API_KEY,lastPull:0,limit:10,maxSec:0,creators:[]}}
-  if(S.v!==2){S.creators.forEach(c=>{c.auto=[];c.err=""});S.lastPull=0;S.v=2}
+  if(S.v!==3){S.creators.forEach(c=>{c.auto=[];c.err=""});S.lastPull=0;S.v=3}
   for(const c of CATALOG){if(!S.creators.some(x=>x.id===c.id))S.creators.push({...c,auto:[],manual:[]})}
   if(!S.apiKey&&API_KEY)S.apiKey=API_KEY;
   S.creators.forEach(c=>{c.manual=c.manual||[];c.auto=c.auto||[]});
@@ -557,8 +557,7 @@ async function pullCreator(c){
     return out.slice(0,PER_CREATOR);
   }
   let clips=[];
-  try{clips=await walk("UUSH"+base,180)}catch(e){}
-  if(!clips.length)clips=await walk("UU"+base,60);
+  try{clips=await walk("UUSH"+base,180)}catch(e){}   // true Shorts only, so YouTube uses the Shorts layout
   return clips;
 }
 async function pullAll(list){
