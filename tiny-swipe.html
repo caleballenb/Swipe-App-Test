@@ -33,6 +33,7 @@ button{font:inherit;cursor:pointer}
 .chan i{display:grid;place-items:center;font:800 12px var(--display);font-style:normal;color:var(--ink)}
 .chan span{overflow:hidden;text-overflow:ellipsis}
 .base{position:absolute;left:0;right:0;bottom:0;height:var(--baseh,62px);background:#000;z-index:3}
+.leftmask{position:absolute;left:0;bottom:var(--baseh,62px);width:var(--leftw,78%);height:var(--lefth,70px);background:#000;z-index:3;border-top-right-radius:14px}
 .likemask{position:absolute;right:0;bottom:var(--baseh,62px);width:var(--likew,58px);height:var(--likeh,60px);background:#000;z-index:3;border-top-left-radius:14px}
 .topbar{position:absolute;left:calc(10px + env(safe-area-inset-left,0px));top:calc(10px + env(safe-area-inset-top,0px));z-index:3;
   display:flex;align-items:center;gap:6px;max-width:calc(100% - 76px)}
@@ -292,7 +293,7 @@ function render(){
     const c=creatorOf(clip.creator)||{name:"?"};
     const s=document.createElement("section");s.className="slide";s.dataset.i=i;
     s.innerHTML=`<div class="pbox"><div id="p${i}"></div></div><div class="cover"></div><div class="shield"></div>
-      <div class="base"></div><div class="likemask"></div>
+      <div class="base"></div><div class="leftmask"></div><div class="likemask"></div>
       <button type="button" class="chan" aria-label="Visit ${esc(c.name)} channel">${c.thumb?`<img src="${esc(c.thumb)}" alt="">`:`<i style="background:${colorOf(clip.creator)}">${esc(c.name[0])}</i>`}<span>${esc(c.handle||c.at||c.name)}</span></button>`;
     s.querySelector(".shield").addEventListener("click",()=>togglePlay(i));
     s.querySelector(".chan").addEventListener("click",()=>askVisit(clip.creator));
