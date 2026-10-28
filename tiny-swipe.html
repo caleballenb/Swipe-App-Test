@@ -147,6 +147,15 @@ button.item:active,label.item:active{background:var(--press)}
 .sw input:checked+i::after{transform:translateX(22px);background:var(--blue)}
 .sw input:focus-visible+i,.back:focus-visible,.item:focus-visible,.pill:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 #searchResults:empty{display:none}
+.tl{display:inline}
+.info{display:inline-grid;place-items:center;vertical-align:middle;width:28px;height:28px;margin:-6px 0 -4px 4px;border-radius:50%;color:var(--sub);cursor:pointer;flex:none}
+.info:active{background:var(--press)}
+.info:focus-visible{outline:2px solid var(--blue)}
+#infoPop{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:24px;background:rgba(20,16,40,.45)}
+#infoPop .sheet{width:min(100%,360px);background:var(--bg);color:var(--fg);border-radius:20px;padding:22px 22px 14px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+#infoPop h4{margin:0 0 8px;font-size:18px;font-weight:700}
+#infoPop p{margin:0 0 14px;font-size:15px;line-height:1.45;color:var(--sub)}
+#infoOk{display:block;margin-left:auto;border:0;background:none;color:var(--blue);font:600 15px/1 inherit;font-family:inherit;padding:10px 4px}
 #searchResults{border-bottom:1px solid var(--line)}
 </style>
 </head>
@@ -292,30 +301,33 @@ frame(0);requestAnimationFrame(tick);
 
     <div class="sec">
       <h3>Content</h3>
-      <button class="item" id="openChannels" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.6c2.6-.2 4.5 1.4 5 4.4"/></svg><span class="t">Channels<small id="chanSummary"></small></span></button>
+      <button class="item" id="openChannels" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.6c2.6-.2 4.5 1.4 5 4.4"/></svg><span class="t"><span class="tl">Channels<span class="info" role="button" tabindex="0" data-info="channels" aria-label="About Channels"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></span></span><small id="chanSummary"></small></span></button>
     </div>
 
     <div class="sec">
       <h3>Watch time</h3>
-      <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M10 9.5v5l4-2.5z"/></svg><span class="t">Videos per session</span><input class="num" type="number" id="limit" min="0" max="200" inputmode="numeric"></label>
-      <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="t">Max video length (seconds)</span><input class="num" type="number" id="maxSec" min="0" max="180" inputmode="numeric"></label>
+      <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M10 9.5v5l4-2.5z"/></svg><span class="t"><span class="tl">Videos per session<span class="info" role="button" tabindex="0" data-info="limit" aria-label="About Videos per session"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></span></span></span><input class="num" type="number" id="limit" min="0" max="200" inputmode="numeric"></label>
+      <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="t"><span class="tl">Max video length (seconds)<span class="info" role="button" tabindex="0" data-info="maxSec" aria-label="About Max video length"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></span></span></span><input class="num" type="number" id="maxSec" min="0" max="180" inputmode="numeric"></label>
       <p class="foot">0 means no limit. A goodbye screen shows when the session ends.</p>
     </div>
 
     <div class="sec">
       <h3>Videos</h3>
-      <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l2 2M14 9l2 2"/></svg><input class="key" type="password" id="apiKey" placeholder="API key" autocomplete="off" aria-label="API key"></label>
-      <button class="item action" id="refresh" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg><span class="t">Refresh videos<small>Also refreshes on its own every 6 hours</small></span></button>
+      <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l2 2M14 9l2 2"/></svg><input class="key" type="password" id="apiKey" placeholder="API key" autocomplete="off" aria-label="API key"><span class="info" role="button" tabindex="0" data-info="apiKey" aria-label="About API key"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></span></label>
+      <button class="item action" id="refresh" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg><span class="t"><span class="tl">Refresh videos<span class="info" role="button" tabindex="0" data-info="refresh" aria-label="About Refresh videos"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></span></span><small>Also refreshes on its own every 6 hours</small></span></button>
       <p id="status" role="status"></p>
     </div>
 
     <div class="sec">
       <h3>Appearance</h3>
-      <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span class="t">Dark mode</span><span class="sw"><input type="checkbox" id="darkMode" aria-label="Dark mode"><i></i></span></label>
+      <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span class="t"><span class="tl">Dark mode<span class="info" role="button" tabindex="0" data-info="dark" aria-label="About Dark mode"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></span></span></span><span class="sw"><input type="checkbox" id="darkMode" aria-label="Dark mode"><i></i></span></label>
           <p class="foot" id="appVersion" style="padding-left:18px;margin-top:24px"></p>
     </div>
   </div>
 
+  <div id="infoPop" hidden role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <div class="sheet"><h4 id="infoTitle"></h4><p id="infoText"></p><button type="button" id="infoOk">Got it</button></div>
+  </div>
   <div class="view" id="vChannels" hidden>
     <div class="bar"><button class="back" id="backMain" type="button" aria-label="Back to settings"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4M10 6l-6 6 6 6"/></svg></button><h2>Channels</h2></div>
     <div class="search">
@@ -541,7 +553,7 @@ function askVisit(id){
   $("visit").hidden=false;
 }
 let mathAns=0;
-function newProblem(){const a=11+Math.floor(Math.random()*39),b=11+Math.floor(Math.random()*39);mathAns=a+b;
+function newProblem(){const a=1+Math.floor(Math.random()*9),b=1+Math.floor(Math.random()*9);mathAns=a+b;
   $("mathQ").textContent=`${a} + ${b} =`;$("mathA").value=""}
 function resetVisit(){$("visitAsk").hidden=false;$("mathForm").hidden=true;$("mathMsg").textContent=""}
 function closeVisit(){$("visit").hidden=true;visitTarget=null;resetVisit();const s=cur();if(s)startClip(s)}
@@ -629,10 +641,23 @@ function closeParent(){
   else if(ytReady)render();
 }
 $("closeParent").addEventListener("click",closeParent);
-const APP_VERSION="2026.10.28 · build 12:36";
+const APP_VERSION="2026.10.28 · build 12:50";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
+const INFO={
+  channels:["Channels","Choose which YouTube channels your child sees. When a channel is on, Tiny Swiper pulls its newest Shorts. Only videos YouTube marks as Made for Kids are shown."],
+  limit:["Videos per session","How many videos your child can watch before a goodbye screen appears. Every new video they swipe to counts as one. Set to 0 for no limit."],
+  maxSec:["Max video length","Stops each video after this many seconds and moves on to the next one. Set to 0 to let every video play to the end."],
+  apiKey:["API key","A free key from Google that lets Tiny Swiper look up each channel's Shorts. You only enter it once, and it stays on this device."],
+  refresh:["Refresh videos","Pulls the newest Shorts from every channel that's on right now. Tiny Swiper also does this on its own every 6 hours."],
+  dark:["Dark mode","Switches Settings to a dark background. It doesn't change the videos."]
+};
+function openInfo(k){const [t,x]=INFO[k];$("infoTitle").textContent=t;$("infoText").textContent=x;$("infoPop").hidden=false;$("infoOk").focus()}
+$("parent").addEventListener("click",e=>{const b=e.target.closest(".info");if(!b)return;e.preventDefault();e.stopPropagation();openInfo(b.dataset.info)},true);
+$("parent").addEventListener("keydown",e=>{const b=e.target.closest&&e.target.closest(".info");if(b&&(e.key==="Enter"||e.key===" ")){e.preventDefault();e.stopPropagation();openInfo(b.dataset.info)}},true);
+$("infoOk").addEventListener("click",()=>$("infoPop").hidden=true);
+$("infoPop").addEventListener("click",e=>{if(e.target.id==="infoPop")$("infoPop").hidden=true});
 function showView(id){$("vMain").hidden=id!=="vMain";$("vChannels").hidden=id!=="vChannels";$("parent").scrollTop=0}
 $("openChannels").addEventListener("click",()=>{showView("vChannels");drawCreators()});
 $("backMain").addEventListener("click",()=>{showView("vMain");countPicked()});
