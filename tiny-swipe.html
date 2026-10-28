@@ -28,11 +28,10 @@ button{font:inherit;cursor:pointer}
 .shield{position:absolute;inset:0;z-index:2}
 .cover{position:absolute;inset:0;z-index:1;background:#ffd9e4;transition:opacity .12s}
 .cover.off{opacity:0;pointer-events:none}
-.tag{position:absolute;left:calc(22% + 6px);top:calc(7.4% - 20px);z-index:3;border:0;text-align:left;
-  display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;
-  background:rgba(0,0,0,.55);color:#fff;font:700 15px/1 var(--display);backdrop-filter:blur(6px)}
-.tag i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;color:var(--ink)}
-.tag small{display:block;font:500 11px/1.2 var(--body);opacity:.8}
+.tag{position:absolute;left:var(--tagx,92px);top:var(--tagy,12px);z-index:3;border:0;text-align:left;
+  height:22px;display:flex;align-items:center;gap:5px;padding:0 9px 0 3px;border-radius:999px;
+  background:rgba(0,0,0,.6);color:#fff;font:700 13px/1 var(--display);white-space:nowrap}
+.tag i{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10px;color:var(--ink)}
 
 #sound{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:5;
   border:0;border-radius:999px;padding:12px 22px;background:var(--sun);color:var(--ink);font:800 18px/1 var(--display);
@@ -94,6 +93,14 @@ input[type=text],input[type=number],input[type=password]{width:100%;padding:10px
 .sw input:checked+i::after{transform:translateX(20px)}
 .sw input:focus-visible+i{outline:3px solid var(--sun);outline-offset:2px}
 .x{border:0;background:none;color:var(--muted);font-size:20px;padding:4px 6px}
+.listbar{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);flex-wrap:wrap}
+.link{border:0;background:none;padding:0;color:var(--ink);font-weight:700;text-decoration:underline}
+#creatorList{max-height:60vh;overflow-y:auto;margin:0 -4px;padding:0 4px}
+.creator input[type=checkbox]{width:24px;height:24px;flex:none;accent-color:var(--leaf);cursor:pointer;margin:0}
+.result{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.result img{width:36px;height:36px;border-radius:50%;flex:none;background:var(--line)}
+.result b{flex:1;min-width:0;font-size:14.5px;overflow-wrap:anywhere}
+.result .btn{padding:8px 12px}
 #status{font-size:13.5px;color:var(--muted);min-height:1.2em;margin:0}
 </style>
 </head>
@@ -136,12 +143,18 @@ input[type=text],input[type=number],input[type=password]{width:100%;padding:10px
     </div>
 
     <div class="box">
-      <h3>Creators</h3>
-      <div id="creatorList"></div>
+      <h3>Channels</h3>
       <div class="row">
-        <label>Add creator by YouTube handle<input type="text" id="newHandle" placeholder="@SuperSimpleSongs" autocomplete="off"></label>
-        <button class="btn alt" id="addCreator" type="button">Add</button>
+        <label>Search YouTube for a channel<input type="text" id="searchQ" placeholder="Name or @handle" autocomplete="off" enterkeyhint="search"></label>
+        <button class="btn alt" id="searchBtn" type="button">Search</button>
       </div>
+      <div id="searchResults"></div>
+      <div class="listbar">
+        <span id="pickedCount"></span>
+        <span><button type="button" class="link" id="allOn">Select all</button> · <button type="button" class="link" id="allOff">Clear</button></span>
+      </div>
+      <input type="text" id="filterQ" placeholder="Filter this list" autocomplete="off" aria-label="Filter channel list">
+      <div id="creatorList"></div>
     </div>
 
     <div class="box">
@@ -168,19 +181,65 @@ input[type=text],input[type=number],input[type=password]{width:100%;padding:10px
 const API_KEY="";
 const SIX_HOURS=6*3600*1000;
 const COLORS=["#ffc93c","#ff8fa3","#7cc6ff","#9be3b4","#c9a7ff","#ffb36b"];
-const DEFAULTS=[
-  {id:"msrachel",name:"Ms Rachel",handle:"@msrachel"},
-  {id:"mickey",name:"Mickey Mouse Clubhouse",handle:"@DisneyJunior",filter:"mickey"},
-  {id:"disney",name:"Disney",handle:"@Disney"},
-  {id:"spongebob",name:"SpongeBob",handle:"@SpongeBobOfficial"},
-  {id:"vania",name:"Vania Mania Kids",handle:"@VaniaManiaKids"},
-  {id:"lewis",name:"Lively Lewis Show",handle:"@LivelyLewisShow"}
-];
+const CATALOG=[  // [id, name, handle, on by default, title filter]
+  ["msrachel","Ms Rachel","@msrachel",1],
+  ["mickey","Mickey Mouse Clubhouse","@DisneyJunior",1,"mickey"],
+  ["disney","Disney","@Disney",1],
+  ["spongebob","SpongeBob","@SpongeBobOfficial",1],
+  ["vania","Vania Mania Kids","@VaniaManiaKids",1],
+  ["lewis","Lively Lewis Show","@LivelyLewisShow",1],
+  ["cocomelon","CoComelon","@Cocomelon"],
+  ["supersimple","Super Simple Songs","@SuperSimpleSongs"],
+  ["blippi","Blippi","@Blippi"],
+  ["bluey","Bluey","@BlueyOfficialChannel"],
+  ["peppa","Peppa Pig","@PeppaPigOfficial"],
+  ["sesame","Sesame Street","@SesameStreet"],
+  ["pbskids","PBS KIDS","@PBSKIDS"],
+  ["pinkfong","Pinkfong Baby Shark","@Pinkfong"],
+  ["lbb","Little Baby Bum","@LittleBabyBum"],
+  ["pawpatrol","PAW Patrol","@PAWPatrolOfficial"],
+  ["nickjr","Nick Jr.","@NickJr"],
+  ["wiggles","The Wiggles","@TheWiggles"],
+  ["diana","Kids Diana Show","@KidsDianaShow"],
+  ["nastya","Like Nastya","@LikeNastyaofficial"],
+  ["ryan","Ryan's World","@RyansWorld"],
+  ["vladniki","Vlad and Niki","@VladandNiki"],
+  ["daveava","Dave and Ava","@DaveandAva"],
+  ["chuchu","ChuChu TV","@ChuChuTV"],
+  ["dannygo","Danny Go!","@DannyGo"],
+  ["bouncepatrol","Bounce Patrol","@BouncePatrol"],
+  ["mothergoose","Mother Goose Club","@MotherGooseClub"],
+  ["heybear","Hey Bear Sensory","@HeyBearSensory"],
+  ["caitie","Caitie's Classroom","@CaitiesClassroom"],
+  ["pocoyo","Pocoyo","@Pocoyo"],
+  ["thomas","Thomas & Friends","@ThomasAndFriends"],
+  ["numberblocks","Numberblocks","@Numberblocks"],
+  ["alphablocks","Alphablocks","@Alphablocks"],
+  ["heyduggee","Hey Duggee","@HeyDuggeeOfficial"],
+  ["storybots","StoryBots","@StoryBots"],
+  ["jackhartmann","Jack Hartmann Kids Music","@JackHartmann"],
+  ["gracie","Gracie's Corner","@GraciesCorner"],
+  ["littleangel","Little Angel","@LittleAngel"],
+  ["moonbug","Moonbug Kids","@MoonbugKids"],
+  ["masha","Masha and the Bear","@MashaandtheBear"],
+  ["babyeinstein","Baby Einstein","@BabyEinstein"],
+  ["pattyshukla","Patty Shukla","@PattyShukla"],
+  ["cosmicyoga","Cosmic Kids Yoga","@CosmicKidsYoga"],
+  ["gonoodle","GoNoodle","@GoNoodle"],
+  ["lingokids","Lingokids","@Lingokids"],
+  ["kiboomers","The Kiboomers","@TheKiboomers"],
+  ["dreamenglish","Dream English Kids","@DreamEnglishKids"],
+  ["babybus","BabyBus","@BabyBus"],
+  ["toddlerfun","Toddler Fun Learning","@ToddlerFunLearning"],
+  ["morphle","Morphle","@Morphle"]
+].map(([id,name,handle,on,filter])=>({id,name,handle,on:!!on,filter:filter||""}));
 const KEY="tinyswipe.v1";
 let S;
 function load(){
   try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
-  if(!S||!S.creators){S={apiKey:API_KEY,lastPull:0,limit:10,maxSec:0,creators:DEFAULTS.map(c=>({...c,on:true,auto:[],manual:[]}))}}
+  if(!S||!S.creators){S={apiKey:API_KEY,lastPull:0,limit:10,maxSec:0,creators:[]}}
+  if(S.v!==2){S.creators.forEach(c=>{c.auto=[];c.err=""});S.lastPull=0;S.v=2}
+  for(const c of CATALOG){if(!S.creators.some(x=>x.id===c.id))S.creators.push({...c,auto:[],manual:[]})}
   if(!S.apiKey&&API_KEY)S.apiKey=API_KEY;
   S.creators.forEach(c=>{c.manual=c.manual||[];c.auto=c.auto||[]});
 }
@@ -198,7 +257,7 @@ function buildFeed(){
   const list=[];let more=true,k=0;
   while(more){more=false;for(const p of pools){if(k<p.clips.length){list.push({...p.clips[k],creator:p.c.id});more=true}}k++}
   if(!list.length)return [];
-  let out=list.slice();while(out.length<30)out=out.concat(shuffle(list));
+  let out=list.slice(0,400);while(out.length<30)out=out.concat(shuffle(list));
   return out;
 }
 function creatorOf(id){return S.creators.find(c=>c.id===id)}
@@ -207,7 +266,7 @@ function colorOf(id){return COLORS[S.creators.findIndex(c=>c.id===id)%COLORS.len
 function render(){
   Object.keys(players).forEach(destroyPlayer);
   if(io)io.disconnect();
-  feed=buildFeed();active=-1;seen=new Set();
+  feed=buildFeed();active=-1;seen=new Set();rebuilt={};
   feedEl.innerHTML="";feedEl.scrollTop=0;
   $("done").hidden=true;
   $("empty").hidden=feed.length>0;
@@ -216,7 +275,7 @@ function render(){
     const c=creatorOf(clip.creator)||{name:"?"};
     const s=document.createElement("section");s.className="slide";s.dataset.i=i;
     s.innerHTML=`<div class="pbox"><div id="p${i}"></div></div><div class="cover"></div><div class="shield"></div>
-      <button type="button" class="tag"><i style="background:${colorOf(clip.creator)}">${esc(c.name[0])}</i><div>${esc(c.name)}<small>Original on YouTube</small></div></button>`;
+      <button type="button" class="tag"><i style="background:${colorOf(clip.creator)}">${esc(c.name[0])}</i><span>${esc(c.name)}</span></button>`;
     s.querySelector(".shield").addEventListener("click",()=>togglePlay(i));
     s.querySelector(".tag").addEventListener("click",()=>askVisit(clip.creator));
     feedEl.appendChild(s);
@@ -226,40 +285,42 @@ function render(){
 }
 function esc(t){return String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
 
-const AHEAD=2;            // players kept warm after the current one
-let primed={};            // buffered and paused at the start, ready to play
+// Phones only decode a couple of videos at once, so keep just the current clip
+// and the next one alive. The next one is pre-buffered silently, then paused.
+let primed={},rebuilt={},wd1=0,wd2=0;
 function cover(i,on){const c=feedEl.querySelector(`.slide[data-i="${i}"] .cover`);if(c)c.classList.toggle("off",!on)}
 function setActive(i){
   if(i===active||parentOpen)return;
-  const prev=active;active=i;
+  active=i;
   if(!seen.has(i)){seen.add(i);
     if(S.limit>0&&seen.size>S.limit){pauseAll();$("done").hidden=false;return}
   }
-  startClip(i);                                   // play first, housekeeping after
-  if(prev>=0&&prev!==i){try{players[prev].pauseVideo()}catch(e){}}
-  for(const k of Object.keys(players)){const n=+k;if(n<i-1||n>i+AHEAD)destroyPlayer(n)}
-  for(let n=i-1;n<=i+AHEAD;n++){if(n>=0&&n<feed.length&&!players[n])makePlayer(n)}
+  for(const k of Object.keys(players)){const n=+k;if(n!==i&&n!==i+1)destroyPlayer(n)}
+  if(!players[i])makePlayer(i);else startClip(i);
+  watch(i);
+}
+function prepNext(i){                       // build the next clip once the current one is playing
+  const n=i+1;if(n<feed.length&&!players[n])makePlayer(n);
 }
 function makePlayer(i){
-  if(!ytReady)return;
-  const clip=feed[i];
+  if(!ytReady||players[i])return;
   const vars={autoplay:0,controls:0,playsinline:1,rel:0,fs:0,disablekb:1,iv_load_policy:3,modestbranding:1,mute:1};
   if(S.maxSec>0)vars.end=S.maxSec;
   cover(i,true);
-  players[i]=new YT.Player("p"+i,{videoId:clip.v,width:"100%",height:"100%",playerVars:vars,
+  players[i]=new YT.Player("p"+i,{videoId:feed[i].v,width:"100%",height:"100%",playerVars:vars,
     events:{
       onReady:()=>{ready[i]=true;
         if(i===active&&!parentOpen)startClip(i);
-        else{try{players[i].mute();players[i].playVideo()}catch(e){}}   // pre-buffer silently
+        else if(i===active+1){try{players[i].mute();players[i].playVideo()}catch(e){}}
       },
       onStateChange:e=>{
         if(e.data===1){
-          if(i===active&&!parentOpen)cover(i,false);
+          if(i===active&&!parentOpen){cover(i,false);clearTimeout(wd1);clearTimeout(wd2);prepNext(i)}
           else if(!primed[i]){primed[i]=true;try{players[i].pauseVideo();players[i].seekTo(0,true)}catch(x){}}
         }
         if(e.data===0&&i===active)goTo(i+1);
       },
-      onError:()=>{if(i===active)goTo(i+1)}
+      onError:()=>{if(i===active)goTo(i+1);else destroyPlayer(i)}
     }});
 }
 function destroyPlayer(n){
@@ -276,18 +337,22 @@ function startClip(i){
     primed[i]=true;
     if(muted)p.mute();else{p.unMute();p.setVolume(100)}
     p.playVideo();
-    if(p.getPlayerState()===1)cover(i,false);
+    if(p.getPlayerState()===1){cover(i,false);prepNext(i)}
   }catch(e){}
-  clearTimeout(window._wd);
-  window._wd=setTimeout(()=>{                     // safety: never leave a stuck pink screen
-    if(i!==active||parentOpen)return;
-    let st=-1;try{st=p.getPlayerState()}catch(e){}
-    if(st!==1){
-      try{p.mute();p.playVideo()}catch(e){}       // browser may have blocked sound; retry muted
-      if(!muted){muted=true;$("sound").hidden=false}
-    }
-    setTimeout(()=>{if(i===active)cover(i,false)},800);
-  },2500);
+}
+function playing(i){try{return players[i].getPlayerState()===1}catch(e){return false}}
+function watch(i){                          // recover from a clip that won't start
+  clearTimeout(wd1);clearTimeout(wd2);
+  wd1=setTimeout(()=>{
+    if(i!==active||parentOpen||playing(i))return;
+    try{players[i].mute();players[i].playVideo()}catch(e){}
+    if(!muted){muted=true;$("sound").hidden=false}
+  },2000);
+  wd2=setTimeout(()=>{
+    if(i!==active||parentOpen||playing(i))return;
+    if(rebuilt[i]){goTo(i+1);return}        // second failure: skip it
+    rebuilt[i]=true;destroyPlayer(i);makePlayer(i);watch(i);
+  },4500);
 }
 let visitTarget=null;
 function askVisit(id){
@@ -300,7 +365,7 @@ function closeVisit(){$("visit").hidden=true;visitTarget=null;startClip(active)}
 $("visitNo").addEventListener("click",closeVisit);
 $("visitYes").addEventListener("click",()=>{
   const c=visitTarget;$("visit").hidden=true;visitTarget=null;
-  if(c)window.open("https://www.youtube.com/"+c.handle,"_blank");
+  if(c)window.open(c.handle?"https://www.youtube.com/"+c.handle:"https://www.youtube.com/channel/"+c.channelId,"_blank");
 });
 function pauseAll(except){for(const k in players){if(+k!==except){try{players[k].pauseVideo()}catch(e){}}}}
 function togglePlay(i){
@@ -345,33 +410,74 @@ function closeParent(){
   S.maxSec=Math.max(0,parseInt($("maxSec").value)||0);
   save();parentOpen=false;$("parent").hidden=true;$("lock").hidden=false;
   const need=S.creators.filter(c=>c.on&&!c.auto.length&&!c.err);
-  if(S.apiKey&&need.length)pullAll(need).then(()=>{if(ytReady&&!parentOpen)render()});
+  if(S.apiKey&&need.length){queuePull(need);pullChain.then(()=>{if(ytReady&&!parentOpen)render()})}
   else if(ytReady)render();
 }
 $("closeParent").addEventListener("click",closeParent);
 
 function drawCreators(){
   const list=$("creatorList");list.innerHTML="";
+  const q=$("filterQ").value.trim().toLowerCase();
+  const custom=S.creators.filter(c=>!CATALOG.some(k=>k.id===c.id));
   S.creators.forEach((c,idx)=>{
-    const n=c.auto.length+c.manual.length;
-    const d=document.createElement("div");d.className="creator";
-    d.innerHTML=`<div class="dot" style="background:${COLORS[idx%COLORS.length]}">${esc(c.name[0])}</div>
-      <div class="meta"><b>${esc(c.name)}</b><span>${esc(c.handle)}${c.filter?` · titles with "${esc(c.filter)}"`:""} · ${n} clip${n===1?"":"s"}</span>${c.err?`<span class="err"><br>${esc(c.err)}</span>`:""}</div>
-      <label class="sw" aria-label="Show ${esc(c.name)}"><input type="checkbox" id="on-${c.id}" ${c.on?"checked":""}><i></i></label>
-      <button class="x" type="button" aria-label="Remove ${esc(c.name)}">×</button>`;
-    d.querySelector("input").addEventListener("change",e=>{c.on=e.target.checked;save()});
-    d.querySelector(".x").addEventListener("click",()=>{S.creators.splice(idx,1);save();drawCreators()});
+    if(q&&!c.name.toLowerCase().includes(q))return;
+    const n=c.auto.length+c.manual.length,isCustom=custom.includes(c);
+    const info=c.err?`<span class="err">${esc(c.err)}</span>`:`<span>${n?n+" clips":(c.on?(S.apiKey?"Loading soon":"Needs API key"):"Not loaded")}</span>`;
+    const d=document.createElement("label");d.className="creator";
+    d.innerHTML=`<input type="checkbox" id="on-${c.id}" ${c.on?"checked":""}>
+      <div class="dot" style="background:${COLORS[idx%COLORS.length]}">${esc(c.name[0])}</div>
+      <div class="meta"><b>${esc(c.name)}</b>${info}</div>
+      ${isCustom?`<button class="x" type="button" aria-label="Remove ${esc(c.name)}">×</button>`:""}`;
+    d.querySelector("input").addEventListener("change",e=>{c.on=e.target.checked;save();countPicked();if(c.on&&!n)queuePull([c])});
+    const x=d.querySelector(".x");
+    if(x)x.addEventListener("click",e=>{e.preventDefault();S.creators.splice(S.creators.indexOf(c),1);save();drawCreators()});
     list.appendChild(d);
   });
+  countPicked();
 }
-$("addCreator").addEventListener("click",()=>{
-  let h=$("newHandle").value.trim();if(!h)return;if(h[0]!=="@")h="@"+h;
-  const id="c"+Date.now();
-  const c={id,name:h.slice(1),handle:h,on:true,auto:[],manual:[]};
-  S.creators.push(c);$("newHandle").value="";save();drawCreators();
-  S.apiKey=$("apiKey").value.trim();
-  if(S.apiKey)pullAll([c]);
-});
+function countPicked(){const n=S.creators.filter(c=>c.on).length;$("pickedCount").textContent=`${n} of ${S.creators.length} channels selected`}
+$("filterQ").addEventListener("input",drawCreators);
+$("allOn").addEventListener("click",()=>{S.creators.forEach(c=>c.on=true);save();drawCreators();queuePull(S.creators.filter(c=>!c.auto.length))});
+$("allOff").addEventListener("click",()=>{S.creators.forEach(c=>c.on=false);save();drawCreators()});
+
+let pullChain=Promise.resolve();
+function queuePull(list){
+  S.apiKey=$("apiKey").value.trim();save();
+  if(!S.apiKey||!list.length)return;
+  pullChain=pullChain.then(()=>pullAll(list)).catch(()=>{});
+}
+
+async function doSearch(){
+  const q=$("searchQ").value.trim(),box=$("searchResults");if(!q)return;
+  S.apiKey=$("apiKey").value.trim();save();
+  if(!S.apiKey){box.innerHTML='<p class="hint">Add your API key below to search YouTube.</p>';return}
+  box.innerHTML='<p class="hint">Searching…</p>';
+  try{
+    let items=[];
+    if(q[0]==="@"){
+      const j=await api("channels",{part:"snippet",forHandle:q});
+      items=(j.items||[]).map(x=>({id:x.id,title:x.snippet.title,thumb:x.snippet.thumbnails.default.url,handle:q}));
+    }
+    if(!items.length){
+      const j=await api("search",{part:"snippet",type:"channel",q,maxResults:8,safeSearch:"strict"});
+      items=j.items.map(x=>({id:x.snippet.channelId,title:x.snippet.title,thumb:x.snippet.thumbnails.default.url,handle:""}));
+    }
+    box.innerHTML=items.length?"":'<p class="hint">No channels found.</p>';
+    for(const it of items){
+      const have=S.creators.find(c=>c.channelId===it.id);
+      const r=document.createElement("div");r.className="result";
+      r.innerHTML=`<img src="${esc(it.thumb)}" alt=""><b>${esc(it.title)}</b><button class="btn ${have?"alt":"go"}" type="button" ${have?"disabled":""}>${have?"Added":"Add"}</button>`;
+      r.querySelector("button").addEventListener("click",e=>{
+        const c={id:"ch_"+it.id,name:it.title,handle:it.handle,channelId:it.id,on:true,auto:[],manual:[]};
+        S.creators.unshift(c);save();e.target.textContent="Added";e.target.disabled=true;e.target.className="btn alt";
+        drawCreators();queuePull([c]);
+      });
+      box.appendChild(r);
+    }
+  }catch(e){box.innerHTML=`<p class="hint">Search failed: ${esc(e.message)}</p>`}
+}
+$("searchBtn").addEventListener("click",doSearch);
+$("searchQ").addEventListener("keydown",e=>{if(e.key==="Enter")doSearch()});
 /* ---------- YouTube Data API ---------- */
 async function api(path,params){
   const u=new URL("https://www.googleapis.com/youtube/v3/"+path);
@@ -385,9 +491,13 @@ function secs(iso){const m=iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)||[];
 const PER_CREATOR=100;
 async function pullCreator(c){
   if(!c.channelId){
-    const j=await api("channels",{part:"id",forHandle:c.handle});
-    if(!j.items||!j.items.length)throw new Error("Channel not found");
-    c.channelId=j.items[0].id;
+    let j=c.handle?await api("channels",{part:"id",forHandle:c.handle}):{};
+    if(j.items&&j.items.length)c.channelId=j.items[0].id;
+    else{
+      j=await api("search",{part:"snippet",type:"channel",q:c.name,maxResults:1});
+      if(!j.items||!j.items.length)throw new Error("Channel not found");
+      c.channelId=j.items[0].snippet.channelId;
+    }
   }
   const base=c.channelId.slice(2),f=(c.filter||"").toLowerCase();
   async function walk(playlistId,maxSec){
@@ -399,7 +509,7 @@ async function pullCreator(c){
       if(ids.length){
         const v=await api("videos",{part:"status,contentDetails,snippet",id:ids.join(",")});
         for(const x of v.items){
-          if(x.status.embeddable&&secs(x.contentDetails.duration)<=maxSec&&(!f||x.snippet.title.toLowerCase().includes(f)))
+          if(x.status.embeddable&&x.status.madeForKids===true&&secs(x.contentDetails.duration)<=maxSec&&(!f||x.snippet.title.toLowerCase().includes(f)))
             out.push({v:x.id,t:x.snippet.title});
         }
       }
@@ -417,7 +527,7 @@ async function pullAll(list){
   const st=$("status"),btn=$("refresh");btn.disabled=true;let total=0;
   for(const [n,c] of list.entries()){
     st.textContent=`Loading ${c.name} (${n+1} of ${list.length})…`;
-    try{c.auto=await pullCreator(c);c.err=c.auto.length?"":"No embeddable Shorts found";total+=c.auto.length}
+    try{c.auto=await pullCreator(c);c.err=c.auto.length?"":"No kids-safe Shorts found";total+=c.auto.length}
     catch(e){c.err=e.message}
     save();if(parentOpen)drawCreators();
   }
