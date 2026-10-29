@@ -531,7 +531,7 @@ function onSwipe(){
   placeSlots();
   if(!swiping&&!parentOpen&&!atSetup){
     swiping=true;
-    slots.forEach(s=>{if(s.idx>=0&&s.idx!==active&&s.primed){try{s.p.mute();s.p.playVideo()}catch(e){}}});
+    slots.forEach(s=>{if(s.idx>=0&&s.idx!==active&&s.primed){try{if(!s.p.isMuted())s.p.mute();if(s.p.getPlayerState()!==1)s.p.playVideo()}catch(e){}}});
   }
   clearTimeout(settleT);settleT=setTimeout(settle,180);
 }
@@ -548,7 +548,7 @@ function makePlayers(){
   ["A","B","C"].forEach((k,n)=>{
     const s=slots[n];s.el=$("slot"+k);
     s.p=new YT.Player("p"+k,{width:"100%",height:"100%",
-      playerVars:{autoplay:0,controls:0,playsinline:1,rel:0,fs:0,disablekb:1,iv_load_policy:3,modestbranding:1,mute:1},
+      playerVars:{autoplay:0,controls:0,playsinline:1,rel:0,fs:0,disablekb:1,iv_load_policy:3,modestbranding:1,mute:1,cc_load_policy:0},
       events:{
         onReady:()=>{s.ready=true;sync()},
         onStateChange:e=>onState(s,e.data),
@@ -557,7 +557,7 @@ function makePlayers(){
   });
 }
 function loadInto(s,i,play){
-  s.idx=i;s.primed=false;placeSlots();
+  s.idx=i;s.primed=false;s.cc=false;placeSlots();
   const o={videoId:feed[i].v,startSeconds:0};if(S.maxSec>0)o.endSeconds=S.maxSec;
   try{s.p.mute();s.p.loadVideoById(o)}catch(e){}
 }
@@ -565,7 +565,7 @@ function onState(s,st){
   if(st===1){
     if(s.idx===active&&!parentOpen){
       s.primed=true;showSlot(s);cover(active,false);clearTimeout(wd1);clearTimeout(wd2);
-      if(!muted){try{s.p.unMute();s.p.setVolume(100)}catch(e){}}
+      setSound(s);noCaptions(s);
       prepNext();
     }else if(!s.primed){s.primed=true;try{s.p.pauseVideo();s.p.seekTo(0,true)}catch(e){}}
   }
@@ -588,9 +588,14 @@ function sync(){                               // make sure the current clip is 
   if(s){if(s.primed)startClip(s);return}     // still loading: onState starts it
   s=freeSlot()||slots.find(x=>x.idx!==active+1&&x.idx!==active-1)||slots[0];loadInto(s,active)
 }
+// Only call the player when something actually needs to change: every play/unmute call
+// makes YouTube flash its pause button and title on screen.
+function noCaptions(s){if(s.cc)return;s.cc=true;try{s.p.unloadModule("captions");s.p.unloadModule("cc")}catch(e){}}
+function setSound(s){try{if(muted){if(!s.p.isMuted())s.p.mute()}else if(s.p.isMuted()){s.p.unMute();s.p.setVolume(100)}}catch(e){}}
 function startClip(s){
   showSlot(s);cover(active,false);
-  try{if(muted)s.p.mute();else{s.p.unMute();s.p.setVolume(100)}s.p.playVideo()}catch(e){}
+  setSound(s);
+  try{if(s.p.getPlayerState()!==1)s.p.playVideo()}catch(e){}
   prepNext();
 }
 function setActive(i){
@@ -648,7 +653,7 @@ function togglePlay(i){
 }
 function unmute(){
   muted=false;needSound=false;
-  const s=cur();if(s){try{s.p.unMute();s.p.setVolume(100);s.p.playVideo()}catch(e){}}
+  const s=cur();if(s)setSound(s);
 }
 function goTo(i){
   if(i>=feed.length)i=0;
@@ -718,7 +723,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.10.28 · build 21:41";
+const APP_VERSION="2026.10.28 · build 21:48";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
