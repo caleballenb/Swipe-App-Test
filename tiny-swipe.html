@@ -50,15 +50,13 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 #feed{position:fixed;inset:0;z-index:1;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #feed::-webkit-scrollbar{display:none}
 .slide{position:relative;height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:transparent;overflow:hidden}
-#stage{position:fixed;inset:0;background:#ffd9e4}
-#stage .slot{position:absolute;inset:0;opacity:0}
-#stage .slot.show{opacity:1}
+#stage{position:fixed;inset:0;background:#000;overflow:hidden}
+#stage .slot{position:absolute;inset:0;transform:translateY(200%);will-change:transform;background:#000}
 #stage iframe,#stage .slot>div{position:absolute;inset:0;width:100%;height:100%;border:0}
 .pbox{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 .pbox iframe,.pbox>div{position:absolute;inset:0;width:100%;height:100%;border:0}
 .shield{position:absolute;inset:0;z-index:2}
-.cover{position:absolute;inset:0;z-index:1;background:#ffd9e4;transition:opacity .12s}
-.cover.off{opacity:0;pointer-events:none}
+.cover{display:none}
 .chan{position:absolute;left:var(--chanx,94px);top:var(--chany,9px);z-index:3;height:24px;max-width:calc(100% - 160px);
   display:flex;align-items:center;gap:7px;border:0;padding:0;background:#000;color:#fff;font:500 14px/1 var(--body);white-space:nowrap}
 .chan img,.chan i{width:24px;height:24px;border-radius:50%;flex:none;object-fit:cover}
@@ -314,7 +312,6 @@ frame(0);requestAnimationFrame(tick);
   </div>
 </div>
 
-<button id="sound" type="button" hidden>🔊 Tap for sound</button>
 
 <button id="lock" type="button" aria-label="Open parent settings">
   <svg viewBox="0 0 44 44" aria-hidden="true"><circle class="r" cx="22" cy="22" r="20" fill="none" stroke="#ffc93c" stroke-width="4"
@@ -450,7 +447,7 @@ function sizePlayers(){
   document.documentElement.style.setProperty("--ph",ph+"px");
 }
 
-let feed=[],active=-1,seen=new Set(),muted=true,ytReady=false,io=null,parentOpen=false;
+let feed=[],active=-1,seen=new Set(),muted=false,needSound=false,ytReady=false,io=null,parentOpen=false;
 
 /* ---------- feed ---------- */
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -490,7 +487,6 @@ function render(){
       !on.length?"No channels are on. Tap the lock and turn some on in Channels.":
       bad?`${bad.name}: ${bad.err}. Tap the lock to check Channels.`:"Tap the lock and choose Refresh videos.";
   }
-  $("sound").hidden=!feed.length||!muted;
   feed.forEach((clip,i)=>{
     const c=creatorOf(clip.creator)||{name:"?"};
     const s=document.createElement("section");s.className="slide";s.dataset.i=i;
@@ -511,7 +507,13 @@ function esc(t){return String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;","
 const slots=[{el:null,p:null,ready:false,idx:-1,primed:false},{el:null,p:null,ready:false,idx:-1,primed:false}];
 let wd1=0,wd2=0;
 function cover(i,on){const c=feedEl.querySelector(`.slide[data-i="${i}"] .cover`);if(c)c.classList.toggle("off",!on)}
-function showSlot(s){slots.forEach(x=>x.el&&x.el.classList.toggle("show",x===s))}
+function placeSlots(){
+  const H=feedEl.clientHeight,top=feedEl.scrollTop;
+  slots.forEach(s=>{if(s.el)s.el.style.transform=s.idx<0?"translateY(200%)":`translateY(${s.idx*H-top}px)`});
+}
+function showSlot(){placeSlots()}
+feedEl.addEventListener("scroll",placeSlots,{passive:true});
+addEventListener("resize",placeSlots);
 function slotFor(i){return slots.find(s=>s.idx===i)}
 function cur(){return slotFor(active)}
 function makePlayers(){
@@ -528,7 +530,7 @@ function makePlayers(){
   });
 }
 function loadInto(s,i,play){
-  s.idx=i;s.primed=false;
+  s.idx=i;s.primed=false;placeSlots();
   const o={videoId:feed[i].v,startSeconds:0};if(S.maxSec>0)o.endSeconds=S.maxSec;
   try{s.p.mute();s.p.loadVideoById(o)}catch(e){}
 }
@@ -573,7 +575,7 @@ function watch(i){                          // recover from a clip that won't st
   wd1=setTimeout(()=>{
     if(i!==active||parentOpen||playing())return;
     const s=cur();if(s){try{s.p.mute();s.p.playVideo()}catch(e){}}
-    if(!muted){muted=true;$("sound").hidden=false}
+    needSound=true;   // browser blocked sound; turn it on at her next touch
   },2500);
   wd2=setTimeout(()=>{if(i===active&&!parentOpen&&!playing())goTo(i+1)},8000);
 }
@@ -608,12 +610,11 @@ $("mathForm").addEventListener("submit",e=>{
 });
 function pauseAll(){slots.forEach(s=>{try{s.p&&s.p.pauseVideo()}catch(e){}})}
 function togglePlay(i){
-  if(muted){unmute();return}
   const s=cur();if(!s)return;
   try{s.p.getPlayerState()===1?s.p.pauseVideo():s.p.playVideo()}catch(e){}
 }
 function unmute(){
-  muted=false;$("sound").hidden=true;
+  muted=false;needSound=false;
   const s=cur();if(s){try{s.p.unMute();s.p.setVolume(100);s.p.playVideo()}catch(e){}}
 }
 function goTo(i){
@@ -621,7 +622,8 @@ function goTo(i){
   const s=feedEl.querySelector(`.slide[data-i="${i}"]`);
   if(s)s.scrollIntoView({behavior:"smooth"});
 }
-$("sound").addEventListener("click",unmute);
+// Sound is on by default. If the browser held it back until a touch, the first touch turns it on.
+document.addEventListener("pointerdown",()=>{if(needSound&&!parentOpen)unmute()},true);
 
 async function fetchThumbs(){
   const need=S.creators.filter(c=>c.on&&c.channelId&&!c.thumb);
@@ -683,7 +685,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.10.28 · build 13:50";
+const APP_VERSION="2026.10.28 · build 21:02";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
