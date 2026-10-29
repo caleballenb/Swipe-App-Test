@@ -54,8 +54,8 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 .slide{position:relative;height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:transparent;overflow:hidden}
 #stage{position:fixed;inset:0;background:#000;overflow:hidden}
 #stage .slot{position:absolute;inset:0;transform:translateY(200%);will-change:transform;background:#000}
-/* size each player to the video's own 9:16 shape and fill the screen top to bottom (sides trim a little on tall phones) */
-#stage iframe,#stage .slot>div{position:absolute;left:50%;top:50%;width:var(--vw,100%);height:var(--vh,100%);transform:translate(-50%,-50%);border:0}
+/* size each player to the video's own 9:16 shape and fill the screen top to bottom (on tall phones the right edge trims a little) */
+#stage iframe,#stage .slot>div{position:absolute;left:0;top:50%;width:var(--vw,100%);height:var(--vh,100%);transform:translateY(-50%);border:0}
 .pbox{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 .pbox iframe,.pbox>div{position:absolute;inset:0;width:100%;height:100%;border:0}
 .shield{position:absolute;inset:0;z-index:2}
@@ -282,7 +282,7 @@ frame(0);requestAnimationFrame(tick);
 })();
 </script>
 
-<div id="stage"><div class="slot" id="slotA"><div id="pA"></div></div><div class="slot" id="slotB"><div id="pB"></div></div></div>
+<div id="stage"><div class="slot" id="slotA"><div id="pA"></div></div><div class="slot" id="slotB"><div id="pB"></div></div><div class="slot" id="slotC"><div id="pC"></div></div></div>
 <div id="feed" aria-label="Video feed"></div>
 
 <div id="loading" hidden role="status" aria-live="polite">
@@ -507,7 +507,8 @@ function esc(t){return String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;","
 // Two YouTube players are created once and reused. One shows the current clip,
 // the other silently loads the next clip and waits paused at the start, so a
 // swipe just swaps which player is visible. No iframe is rebuilt per swipe.
-const slots=[{el:null,p:null,ready:false,idx:-1,primed:false},{el:null,p:null,ready:false,idx:-1,primed:false}];
+// three players: previous, current and next, so both neighbours stay visible while swiping
+const slots=[0,1,2].map(()=>({el:null,p:null,ready:false,idx:-1,primed:false}));
 let wd1=0,wd2=0;
 function cover(i,on){const c=feedEl.querySelector(`.slide[data-i="${i}"] .cover`);if(c)c.classList.toggle("off",!on)}
 function fitVideos(){
@@ -526,7 +527,7 @@ function slotFor(i){return slots.find(s=>s.idx===i)}
 function cur(){return slotFor(active)}
 function makePlayers(){
   if(slots[0].p||!ytReady)return;
-  ["A","B"].forEach((k,n)=>{
+  ["A","B","C"].forEach((k,n)=>{
     const s=slots[n];s.el=$("slot"+k);
     s.p=new YT.Player("p"+k,{width:"100%",height:"100%",
       playerVars:{autoplay:0,controls:0,playsinline:1,rel:0,fs:0,disablekb:1,iv_load_policy:3,modestbranding:1,mute:1},
@@ -545,23 +546,29 @@ function loadInto(s,i,play){
 function onState(s,st){
   if(st===1){
     if(s.idx===active&&!parentOpen){
-      showSlot(s);cover(active,false);clearTimeout(wd1);clearTimeout(wd2);
+      s.primed=true;showSlot(s);cover(active,false);clearTimeout(wd1);clearTimeout(wd2);
       if(!muted){try{s.p.unMute();s.p.setVolume(100)}catch(e){}}
       prepNext();
     }else if(!s.primed){s.primed=true;try{s.p.pauseVideo();s.p.seekTo(0,true)}catch(e){}}
   }
   if(st===0&&s.idx===active)goTo(active+1);
 }
+function freeSlot(){                          // a player not holding the previous, current or next clip
+  const keep=[active-1,active,active+1];
+  const c=slots.filter(s=>s.ready&&(s.idx<0||!keep.includes(s.idx)));
+  c.sort((a,b)=>(a.idx<0?-1e9:-Math.abs(a.idx-active))-(b.idx<0?-1e9:-Math.abs(b.idx-active)));
+  return c[0];
+}
 function prepNext(){
-  const n=active+1;if(n>=feed.length||slotFor(n))return;
-  const other=slots.find(s=>s.idx!==active);
-  if(other&&other.ready)loadInto(other,n);
+  const n=active+1,pv=active-1;
+  if(n<feed.length&&!slotFor(n)){const f=freeSlot();if(f)loadInto(f,n)}
+  if(pv>=0&&!slotFor(pv)){const f=freeSlot();if(f)loadInto(f,pv)}
 }
 function sync(){                               // make sure the current clip is loaded and playing
   if(active<0||parentOpen||atSetup||!slots.every(s=>s.ready))return;
   let s=cur();
-  if(s&&s.primed){startClip(s);return}
-  if(!s){s=slots.find(x=>x.idx!==active+1)||slots[0];loadInto(s,active)}
+  if(s){if(s.primed)startClip(s);return}     // still loading: onState starts it
+  s=freeSlot()||slots.find(x=>x.idx!==active+1&&x.idx!==active-1)||slots[0];loadInto(s,active)
 }
 function startClip(s){
   showSlot(s);cover(active,false);
@@ -693,7 +700,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.10.28 · build 21:14";
+const APP_VERSION="2026.10.28 · build 21:24";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
