@@ -54,7 +54,7 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 .slide{position:relative;height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:transparent;overflow:hidden}
 #stage{position:fixed;inset:0;background:#000;overflow:hidden}
 #stage .slot{position:absolute;inset:0;transform:translateY(200%);will-change:transform;background:#000;overflow:hidden}
-#stage .slot::before,#stage .slot::after{content:"";position:absolute;left:0;right:0;height:2px;background:#000;z-index:1;pointer-events:none}
+#stage .slot::before,#stage .slot::after{content:"";position:absolute;left:0;right:0;height:3px;background:#000;z-index:1;pointer-events:none}
 #stage .slot::before{top:0}
 #stage .slot::after{bottom:0}
 /* size each player to the video's own 9:16 shape and fill the screen top to bottom (on tall phones the right edge trims a little) */
@@ -526,18 +526,13 @@ function placeSlots(){
 function showSlot(){placeSlots()}
 // While a swipe is moving, neighbouring videos play silently so YouTube never shows its
 // pause button on them. Once the swipe settles, the off-screen ones pause again.
-let settleT=0,swiping=false;
-function onSwipe(){
-  placeSlots();
-  if(!swiping&&!parentOpen&&!atSetup){
-    swiping=true;
-    slots.forEach(s=>{if(s.idx>=0&&s.idx!==active&&s.primed){try{if(!s.p.isMuted())s.p.mute();if(s.p.getPlayerState()!==1)s.p.playVideo()}catch(e){}}});
-  }
-  clearTimeout(settleT);settleT=setTimeout(settle,180);
-}
-function settle(){
-  swiping=false;
-  slots.forEach(s=>{if(s.idx>=0&&s.idx!==active){try{s.p.pauseVideo();s.p.seekTo(0,true)}catch(e){}}});
+// Neighbouring videos never pause: they keep playing silently (volume 0) off-screen, so a
+// swipe only changes volume. Play/pause/mute calls are what make YouTube flash its pause button.
+let settleT=0;
+function onSwipe(){placeSlots();clearTimeout(settleT);settleT=setTimeout(settle,250)}
+function settle(){                               // rewind the upcoming video while it's off-screen
+  const n=slotFor(active+1);
+  if(n&&n.primed){try{if(n.p.getCurrentTime()>1.5)n.p.seekTo(0,true)}catch(e){}}
 }
 feedEl.addEventListener("scroll",onSwipe,{passive:true});
 addEventListener("resize",placeSlots);
@@ -559,7 +554,7 @@ function makePlayers(){
 function loadInto(s,i,play){
   s.idx=i;s.primed=false;s.cc=false;placeSlots();
   const o={videoId:feed[i].v,startSeconds:0};if(S.maxSec>0)o.endSeconds=S.maxSec;
-  try{s.p.mute();s.p.loadVideoById(o)}catch(e){}
+  try{s.p.setVolume(0);s.p.loadVideoById(o)}catch(e){}
 }
 function onState(s,st){
   if(st===1){
@@ -567,9 +562,12 @@ function onState(s,st){
       s.primed=true;showSlot(s);cover(active,false);clearTimeout(wd1);clearTimeout(wd2);
       setSound(s);noCaptions(s);
       prepNext();
-    }else if(!s.primed){s.primed=true;try{s.p.pauseVideo();s.p.seekTo(0,true)}catch(e){}}
+    }else if(!s.primed){s.primed=true;try{s.p.setVolume(0);if(!muted&&s.p.isMuted())s.p.unMute()}catch(e){}}   // unmute while off-screen so the swipe itself needs no mute change
   }
-  if(st===0&&s.idx===active)goTo(active+1);
+  if(st===0){
+    if(s.idx===active)goTo(active+1);
+    else{try{s.p.seekTo(0,true);s.p.playVideo()}catch(e){}}   // loop quietly off-screen
+  }
 }
 function freeSlot(){                          // a player not holding the previous, current or next clip
   const keep=[active-1,active,active+1];
@@ -591,11 +589,16 @@ function sync(){                               // make sure the current clip is 
 // Only call the player when something actually needs to change: every play/unmute call
 // makes YouTube flash its pause button and title on screen.
 function noCaptions(s){if(s.cc)return;s.cc=true;try{s.p.unloadModule("captions");s.p.unloadModule("cc")}catch(e){}}
-function setSound(s){try{if(muted){if(!s.p.isMuted())s.p.mute()}else if(s.p.isMuted()){s.p.unMute();s.p.setVolume(100)}}catch(e){}}
+function setSound(s){try{
+  if(muted){if(s.p.getVolume()!==0)s.p.setVolume(0);return}
+  if(s.p.isMuted())s.p.unMute();
+  if(s.p.getVolume()!==100)s.p.setVolume(100);
+}catch(e){}}
 function startClip(s){
   showSlot(s);cover(active,false);
   setSound(s);
   try{if(s.p.getPlayerState()!==1)s.p.playVideo()}catch(e){}
+  slots.forEach(x=>{if(x!==s&&x.primed){try{if(x.p.getVolume()!==0)x.p.setVolume(0);if(x.p.getPlayerState()===2)x.p.playVideo()}catch(e){}}});
   prepNext();
 }
 function setActive(i){
@@ -604,7 +607,7 @@ function setActive(i){
   if(!seen.has(i)){seen.add(i);
     if(S.limit>0&&seen.size>S.limit){pauseAll();$("done").hidden=false;return}
   }
-  if(prev&&prev.idx!==i){try{prev.p.mute()}catch(e){}}
+  if(prev&&prev.idx!==i){try{prev.p.setVolume(0)}catch(e){}}
   cover(i,true);makePlayers();sync();watch(i);
 }
 function playing(){const s=cur();try{return !!s&&s.p.getPlayerState()===1}catch(e){return false}}
@@ -723,7 +726,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.10.28 · build 21:48";
+const APP_VERSION="2026.10.28 · build 22:10";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
