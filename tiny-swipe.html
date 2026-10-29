@@ -521,7 +521,22 @@ function placeSlots(){
   slots.forEach(s=>{if(s.el)s.el.style.transform=s.idx<0?"translateY(200%)":`translateY(${s.idx*H-top}px)`});
 }
 function showSlot(){placeSlots()}
-feedEl.addEventListener("scroll",placeSlots,{passive:true});
+// While a swipe is moving, neighbouring videos play silently so YouTube never shows its
+// pause button on them. Once the swipe settles, the off-screen ones pause again.
+let settleT=0,swiping=false;
+function onSwipe(){
+  placeSlots();
+  if(!swiping&&!parentOpen&&!atSetup){
+    swiping=true;
+    slots.forEach(s=>{if(s.idx>=0&&s.idx!==active&&s.primed){try{s.p.mute();s.p.playVideo()}catch(e){}}});
+  }
+  clearTimeout(settleT);settleT=setTimeout(settle,180);
+}
+function settle(){
+  swiping=false;
+  slots.forEach(s=>{if(s.idx>=0&&s.idx!==active){try{s.p.pauseVideo();s.p.seekTo(0,true)}catch(e){}}});
+}
+feedEl.addEventListener("scroll",onSwipe,{passive:true});
 addEventListener("resize",placeSlots);
 function slotFor(i){return slots.find(s=>s.idx===i)}
 function cur(){return slotFor(active)}
@@ -581,7 +596,7 @@ function setActive(i){
   if(!seen.has(i)){seen.add(i);
     if(S.limit>0&&seen.size>S.limit){pauseAll();$("done").hidden=false;return}
   }
-  if(prev&&prev.idx!==i){try{prev.p.pauseVideo()}catch(e){}}
+  if(prev&&prev.idx!==i){try{prev.p.mute()}catch(e){}}
   cover(i,true);makePlayers();sync();watch(i);
 }
 function playing(){const s=cur();try{return !!s&&s.p.getPlayerState()===1}catch(e){return false}}
@@ -700,7 +715,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.10.28 · build 21:24";
+const APP_VERSION="2026.10.28 · build 21:38";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
