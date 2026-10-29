@@ -53,7 +53,10 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 #feed::-webkit-scrollbar{display:none}
 .slide{position:relative;height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:transparent;overflow:hidden}
 #stage{position:fixed;inset:0;background:#000;overflow:hidden}
-#stage .slot{position:absolute;inset:0;transform:translateY(200%);will-change:transform;background:#000}
+#stage .slot{position:absolute;inset:0;transform:translateY(200%);will-change:transform;background:#000;overflow:hidden}
+#stage .slot::before,#stage .slot::after{content:"";position:absolute;left:0;right:0;height:2px;background:#000;z-index:1;pointer-events:none}
+#stage .slot::before{top:0}
+#stage .slot::after{bottom:0}
 /* size each player to the video's own 9:16 shape and fill the screen top to bottom (on tall phones the right edge trims a little) */
 #stage iframe,#stage .slot>div{position:absolute;left:0;top:50%;width:var(--vw,100%);height:var(--vh,100%);transform:translateY(-50%);border:0}
 .pbox{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
@@ -715,7 +718,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.10.28 · build 21:38";
+const APP_VERSION="2026.10.28 · build 21:41";
 $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
