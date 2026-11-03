@@ -496,6 +496,33 @@ const CATALOG=[  // [id, name, handle, on by default, title filter]
   ["miffy","Miffy","@Miffy"],
   ["elinor","Elinor Wonders Why","@ElinorWondersWhy"]
 ].map(([id,name,handle,on,filter])=>({id,name,handle,on:!!on,filter:filter||""}));
+// Backups: shown in the list only to replace channels that turn out to have no kids' Shorts.
+const RESERVE=[
+  ["supersimpletv","Super Simple TV","@SuperSimpleTV"],
+  ["pjmasks","PJ Masks","@PJMasksOfficial"],
+  ["babyfirst","BabyFirst TV","@BabyFirstTV"],
+  ["blippitoys","Blippi Toys","@BlippiToys"],
+  ["kidsroma","Kids Roma Show","@KidsRomaShow"],
+  ["cocoanimal","CoComelon Animal Time","@CoComelonAnimalTime"],
+  ["hogi","Hogi","@Hogi"],
+  ["bebefinn","Bebefinn","@Bebefinn"],
+  ["mickeymouse","Mickey Mouse","@MickeyMouse"],
+  ["junglebeat","Jungle Beat","@JungleBeat"],
+  ["rickyzoom","Ricky Zoom","@RickyZoom"],
+  ["omnom","Om Nom Stories","@OmNomStories"],
+  ["colourblocks","Colourblocks","@Colourblocks"],
+  ["nightgarden","In the Night Garden","@InTheNightGarden"],
+  ["twirlywoos","Twirlywoos","@Twirlywoos"],
+  ["stacytoys","Stacy Toys","@StacyToys"],
+  ["supersimpleplay","Super Simple Play","@SuperSimplePlay"],
+  ["dinoranch","Dino Ranch","@DinoRanch"],
+  ["fixies","The Fixies","@TheFixies"],
+  ["leotruck","Leo the Truck","@LeoTheTruck"],
+  ["tractorted","Tractor Ted","@TractorTed"],
+  ["booba","Booba","@Booba"],
+  ["lucasspider","Lucas the Spider","@LucasTheSpider"]
+].map(([id,name,handle])=>({id,name,handle,on:false,filter:"",reserve:true}));
+const VISIBLE=100;
 const KEY="tinyswipe.v1";
 let S;
 function load(){
@@ -504,7 +531,7 @@ function load(){
   if(S.v!==3&&S.v!==4&&S.v!==5){S.creators.forEach(c=>{c.auto=[];c.err=""});S.lastPull=0;S.v=3}
   if(S.v===3){S.creators.forEach(c=>{if(!c.auto.length)c.err=""});S.v=4}
   if(S.v===4){S.creators.forEach(c=>{c.auto=[];c.err=""});S.lastPull=0;S.v=5}   // reload: Shorts only
-  for(const c of CATALOG){if(!S.creators.some(x=>x.id===c.id))S.creators.push({...c,auto:[],manual:[]})}
+  for(const c of CATALOG.concat(RESERVE)){if(!S.creators.some(x=>x.id===c.id))S.creators.push({...c,auto:[],manual:[]})}
   // merge hand-added duplicates of built-in channels (same @handle or same YouTube channel)
   const norm=x=>(x||"").toLowerCase();
   S.creators=S.creators.filter(c=>{
@@ -536,7 +563,7 @@ let feed=[],active=-1,seen=new Set(),muted=false,needSound=false,ytReady=false,i
 /* ---------- feed ---------- */
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
 function buildFeed(){
-  const pools=S.creators.filter(c=>c.on).map((c,ci)=>({c,clips:shuffle([...c.manual,...c.auto])})).filter(p=>p.clips.length);
+  const pools=S.creators.filter(c=>c.on&&!isBad(c)).map((c,ci)=>({c,clips:shuffle([...c.manual,...c.auto])})).filter(p=>p.clips.length);
   const list=[];let more=true,k=0;
   while(more){more=false;for(const p of pools){if(k<p.clips.length){list.push({...p.clips[k],creator:p.c.id});more=true}}k++}
   if(!list.length)return [];
@@ -834,7 +861,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.11.02 · build 23:18";
+const APP_VERSION="2026.11.02 · build 23:24";
 // Update check: when a newer version is on GitHub, offer a one-tap restart.
 (function(){
   let dismissed="";
@@ -884,14 +911,40 @@ $("parent").addEventListener("keydown",e=>{const b=e.target.closest&&e.target.cl
 $("infoOk").addEventListener("click",()=>$("infoPop").hidden=true);
 $("infoPop").addEventListener("click",e=>{if(e.target.id==="infoPop")$("infoPop").hidden=true});
 function showView(id){$("vMain").hidden=id!=="vMain";$("vChannels").hidden=id!=="vChannels";$("parent").scrollTop=0}
-$("openChannels").addEventListener("click",()=>{showView("vChannels");drawCreators();fetchThumbs().then(()=>{if(!$("vChannels").hidden)drawCreators()})});
+$("openChannels").addEventListener("click",()=>{showView("vChannels");drawCreators();fetchThumbs().then(()=>{if(!$("vChannels").hidden)drawCreators();vetChannels()})});
 $("backMain").addEventListener("click",()=>{showView("vMain");countPicked()});
 
+function friendlyErr(m){return /quota/i.test(m)?"Daily YouTube limit reached. Tries again tomorrow.":/key/i.test(m)?"Couldn't load right now. Tries again later.":/found/i.test(m)&&!/Shorts/.test(m)?"Channel not found":/Shorts|Kids/.test(m)?m:"Couldn't load right now. Tries again later."}
+// A channel is hidden for good once YouTube says it has no Shorts, none are Made for Kids, or it can't be found.
+const BAD=/no Shorts|Made for Kids|not found/i;
+function isBad(c){return !!c.err&&BAD.test(c.err)}
+function shownChannels(){
+  const builtIn=new Set(CATALOG.concat(RESERVE).map(k=>k.id));
+  const main=S.creators.filter(c=>!isBad(c)&&!c.reserve);
+  const spare=S.creators.filter(c=>!isBad(c)&&c.reserve);
+  return main.concat(spare).slice(0,Math.max(VISIBLE,main.filter(c=>!builtIn.has(c.id)).length+VISIBLE));
+}
+// Quietly check each listed channel once, so broken ones are swapped out before parents pick them.
+let vetting=false;
+async function vetChannels(){
+  if(vetting||!S.apiKey)return;vetting=true;
+  try{
+    for(let round=0;round<3;round++){
+      const todo=shownChannels().filter(c=>!c.vetted&&!c.auto.length&&!c.err);
+      if(!todo.length)break;
+      const q=todo.slice();
+      async function w(){while(q.length){const c=q.shift();
+        try{const got=await pullCreator(c,1);c.auto=got;c.err=""}catch(e){c.auto=[];c.err=friendlyErr(e.message||"")}
+        c.vetted=true;if(isBad(c))c.on=false;save();if(!$("vChannels").hidden)drawCreators()}}
+      await Promise.all([w(),w()]);
+    }
+  }finally{vetting=false}
+}
 function drawCreators(){
   const list=$("creatorList");list.innerHTML="";
   const q=$("filterQ").value.trim().toLowerCase();
-  const custom=S.creators.filter(c=>!CATALOG.some(k=>k.id===c.id));
-  S.creators.forEach((c,idx)=>{
+  const custom=S.creators.filter(c=>!CATALOG.some(k=>k.id===c.id)&&!c.reserve);
+  shownChannels().forEach((c,idx)=>{
     if(q&&!c.name.toLowerCase().includes(q))return;
     const n=c.auto.length+c.manual.length,isCustom=custom.includes(c);
     const info=c.err?`<span class="err">${esc(c.err)}</span>`:(n?n+" videos":(c.on?"Loading…":"Off"));
@@ -907,10 +960,10 @@ function drawCreators(){
   });
   countPicked();
 }
-function countPicked(){const n=S.creators.filter(c=>c.on).length;
-  $("pickedCount").textContent=`${n} of ${S.creators.length} on`;$("chanSummary").textContent=`${n} of ${S.creators.length} on`}
+function countPicked(){const all=shownChannels(),n=all.filter(c=>c.on).length;
+  $("pickedCount").textContent=`${n} of ${all.length} on`;$("chanSummary").textContent=`${n} of ${all.length} on`}
 $("filterQ").addEventListener("input",drawCreators);
-$("allOn").addEventListener("click",()=>{S.creators.forEach(c=>c.on=true);save();drawCreators();queuePull(S.creators.filter(c=>!c.auto.length))});
+$("allOn").addEventListener("click",()=>{const all=shownChannels();all.forEach(c=>c.on=true);save();drawCreators();queuePull(all.filter(c=>!c.auto.length))});
 $("allOff").addEventListener("click",()=>{S.creators.forEach(c=>c.on=false);save();drawCreators()});
 
 let pullChain=Promise.resolve(),loadT=0,loadD=0;
@@ -1016,8 +1069,8 @@ async function pullAll(list,onFirst,maxPages=2,workers=4,track=false){
     while(queue.length){
       const c=queue.shift();
       try{const got=await pullCreator(c,maxPages);if(got.length>=c.auto.length||maxPages>1)c.auto=got;c.err="";total+=c.auto.length}
-      catch(e){c.auto=[];const m=e.message||"";
-        c.err=/quota/i.test(m)?"Daily YouTube limit reached. Tries again tomorrow.":/key/i.test(m)?"Couldn't load right now. Tries again later.":/found/i.test(m)&&!/Shorts/.test(m)?"Channel not found":/Shorts|Kids/.test(m)?m:"Couldn't load right now. Tries again later."}
+      catch(e){c.auto=[];c.err=friendlyErr(e.message||"")}
+      if(isBad(c))c.on=false;
       if(track){loadD++;loadBar()}
       save();if(parentOpen)drawCreators();
       if(!fired&&total&&onFirst){fired=true;onFirst()}
