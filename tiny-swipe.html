@@ -62,8 +62,6 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 #stage .slot{position:absolute;inset:0;transform:translateY(200%);will-change:transform;background:#000;overflow:hidden}
 #stage .slot::before,#stage .slot::after{content:"";position:absolute;left:0;right:0;height:3px;background:#000;z-index:1;pointer-events:none}
 #stage .slot::before{top:0}
-/* YouTube shows a link button bottom-left only while paused; cover it then (that corner is black in the paused layout) */
-#pauseMask{position:absolute;left:0;bottom:0;width:104px;height:104px;background:#000;z-index:2;pointer-events:none}
 #stage .slot::after{bottom:0}
 /* size each player to the video's own 9:16 shape and fill the screen top to bottom (on tall phones the right edge trims a little) */
 /* the player fills the screen; YouTube then uses its Shorts layout (logo top left, channel bottom left) */
@@ -97,13 +95,14 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
   border:0;border-radius:999px;padding:12px 22px;background:var(--sun);color:var(--ink);font:800 18px/1 var(--display);
   box-shadow:0 6px 0 #d9a51c}
 #lock{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));z-index:6;
-  display:flex;align-items:flex-start;gap:8px;-webkit-user-select:none;user-select:none}
-#gear{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);color:#fff;display:grid;place-items:center}
-#slide{position:relative;width:44px;height:44px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);touch-action:none;overflow:hidden;transition:height .18s ease}
-#slide.open{height:160px}
-#slideText{position:absolute;inset:0;display:grid;place-items:center;padding-top:40px;writing-mode:vertical-rl;font:600 12px/1 Roboto,system-ui,sans-serif;color:rgba(255,255,255,.9);pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .12s}
+  width:96px;height:44px;-webkit-user-select:none;user-select:none}
+#gear{position:absolute;right:0;top:0;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);color:#fff;display:grid;place-items:center}
+/* the lock rests left of the gear; holding it stretches it to the right, over the gear */
+#slide{position:absolute;left:0;top:0;z-index:1;width:44px;height:44px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);touch-action:none;overflow:hidden;transition:width .18s ease}
+#slide.open{width:104px;background:rgba(0,0,0,.75)}
+#slideText{position:absolute;inset:0;display:grid;place-items:center;padding-left:40px;font:600 10px/1.1 Roboto,system-ui,sans-serif;text-align:center;color:rgba(255,255,255,.9);pointer-events:none;opacity:0;transition:opacity .12s}
 #slide.open #slideText{opacity:1;transition-delay:.08s}
-#knob{position:absolute;top:3px;right:3px;width:36px;height:36px;border-radius:50%;background:#fff;color:#2A2140;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+#knob{position:absolute;top:3px;left:3px;width:36px;height:36px;border-radius:50%;background:#fff;color:#2A2140;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 #knob.anim{transition:transform .2s ease}
 #lock.locked #gear{display:none}
 
@@ -300,7 +299,7 @@ frame(0);requestAnimationFrame(tick);
 })();
 </script>
 
-<div id="stage"><div class="slot" id="slotA"><div id="pA"></div></div><div class="slot" id="slotB"><div id="pB"></div></div><div class="slot" id="slotC"><div id="pC"></div></div><div id="pauseMask" hidden></div></div>
+<div id="stage"><div class="slot" id="slotA"><div id="pA"></div></div><div class="slot" id="slotB"><div id="pB"></div></div><div class="slot" id="slotC"><div id="pC"></div></div></div>
 <div id="feed" aria-label="Video feed"></div>
 
 <div id="update" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="updTitle">
@@ -342,11 +341,11 @@ frame(0);requestAnimationFrame(tick);
 
 
 <div id="lock">
-  <button id="gear" type="button" aria-label="Open parent settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
   <div id="slide" role="switch" aria-checked="false" aria-label="Slide to lock the app">
     <span id="slideText">Slide to lock</span>
     <span id="knob"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path id="shackle" d="M8 11V8a4 4 0 0 1 7.5-2"/></svg></span>
   </div>
+  <button id="gear" type="button" aria-label="Open parent settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </div>
 
 <div id="parent" hidden>
@@ -609,9 +608,8 @@ function showSlot(){placeSlots()}
 // pause button on them. Once the swipe settles, the off-screen ones pause again.
 // Previous and next videos wait paused at their start; only the current one plays.
 let settleT=0;
-function onSwipe(){$("pauseMask").hidden=true;placeSlots();clearTimeout(settleT);settleT=setTimeout(settle,180)}
+function onSwipe(){placeSlots();clearTimeout(settleT);settleT=setTimeout(settle,180)}
 function settle(){                               // once the swipe stops, pause and rewind the off-screen ones
-  maskPause();
   slots.forEach(s=>{if(s.idx>=0&&s.idx!==active){try{if(s.p.getPlayerState()!==2)s.p.pauseVideo();s.p.seekTo(0,true)}catch(e){}}});
 }
 feedEl.addEventListener("scroll",onSwipe,{passive:true});
@@ -636,9 +634,7 @@ function loadInto(s,i,play){
   const o={videoId:feed[i].v,startSeconds:0};if(S.maxSec>0)o.endSeconds=S.maxSec;
   try{s.p.mute();s.p.loadVideoById(o)}catch(e){}
 }
-function maskPause(){const s=cur();let paused=false;try{paused=!!s&&s.p.getPlayerState()===2}catch(e){}$("pauseMask").hidden=!paused}
 function onState(s,st){
-  if(s.idx===active)setTimeout(maskPause,0);
   if(st===1){
     if(s.idx===active&&!parentOpen){
       s.primed=true;showSlot(s);cover(active,false);clearTimeout(wd1);clearTimeout(wd2);
@@ -784,12 +780,12 @@ $("gear").addEventListener("click",openParent);
 // and the app goes full screen so the system bars are hidden.
 (function(){
   const slide=$("slide"),knob=$("knob"),box=$("lock");
-  const MAX=()=>160-36-8;   // travel distance when the bar is open (downward)
+  const MAX=()=>104-36-8;   // travel distance when the bar is open (to the right)
   let startX=0,base=0,drag=false;
-  function place(y,anim){knob.classList.toggle("anim",!!anim);knob.style.transform=`translateY(${y}px)`}
+  function place(x,anim){knob.classList.toggle("anim",!!anim);knob.style.transform=`translateX(${x}px)`}
   function paint(){
     box.classList.toggle("locked",!!S.locked);slide.setAttribute("aria-checked",S.locked?"true":"false");
-    $("slideText").textContent=S.locked?"Slide down to unlock":"Slide down to lock";
+    $("slideText").innerHTML=S.locked?"Slide to<br>unlock ›":"Slide to<br>lock ›";
     $("shackle").setAttribute("d",S.locked?"M8 11V8a4 4 0 0 1 8 0v3":"M8 11V8a4 4 0 0 1 7.5-2");
     place(0,true);
   }
@@ -802,13 +798,13 @@ $("gear").addEventListener("click",openParent);
       try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
     }
   }
-  slide.addEventListener("pointerdown",e=>{drag=true;startX=e.clientY;base=0;slide.classList.add("open");slide.setPointerCapture(e.pointerId);knob.classList.remove("anim")});
-  slide.addEventListener("pointermove",e=>{if(!drag)return;place(Math.max(0,Math.min(MAX(),e.clientY-startX)))});
+  slide.addEventListener("pointerdown",e=>{drag=true;startX=e.clientX;base=0;slide.classList.add("open");slide.setPointerCapture(e.pointerId);knob.classList.remove("anim")});
+  slide.addEventListener("pointermove",e=>{if(!drag)return;place(Math.max(0,Math.min(MAX(),e.clientX-startX)))});
   function end(e){
     if(!drag)return;drag=false;
-    const y=Math.max(0,Math.min(MAX(),e.clientY-startX));
+    const x=Math.max(0,Math.min(MAX(),e.clientX-startX));
     slide.classList.remove("open");
-    if(y>MAX()*.85)setLocked(!S.locked);
+    if(x>MAX()*.85)setLocked(!S.locked);
     else paint();
   }
   slide.addEventListener("pointerup",end);slide.addEventListener("pointercancel",()=>{drag=false;slide.classList.remove("open");paint()});
@@ -843,7 +839,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.11.02 · build 23:08";
+const APP_VERSION="2026.11.02 · build 23:12";
 // Update check: when a newer version is on GitHub, offer a one-tap restart.
 (function(){
   let dismissed="";
