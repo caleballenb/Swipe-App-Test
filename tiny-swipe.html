@@ -328,6 +328,7 @@ frame(0);requestAnimationFrame(tick);
 </button>
 
 <div id="parent" hidden>
+  <input type="hidden" id="apiKey">
   <div class="view" id="vMain">
     <div class="bar"><button class="back" id="closeParent" type="button" aria-label="Back"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4M10 6l-6 6 6 6"/></svg></button><h2>Settings</h2></div>
 
@@ -343,11 +344,6 @@ frame(0);requestAnimationFrame(tick);
     </div>
 
     <div class="sec">
-      <h3>Videos</h3>
-      <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l2 2M14 9l2 2"/></svg><input class="key" type="password" id="apiKey" placeholder="API key" autocomplete="off" aria-label="API key"><span class="info" role="button" tabindex="0" data-info="apiKey" aria-label="About API key"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></span></label>
-    </div>
-
-    <div class="sec">
       <h3>Appearance</h3>
       <label class="item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span class="t"><span class="tl">Dark mode<span class="info" role="button" tabindex="0" data-info="dark" aria-label="About Dark mode"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></span></span></span><span class="sw"><input type="checkbox" id="darkMode" aria-label="Dark mode"><i></i></span></label>
           <div class="startWrap"><p id="startMsg" class="foot" aria-live="polite"></p><button type="button" id="startBtn" aria-label="Start Swiping"><svg class="startWord" viewBox="-6 -122 643 175" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"><path transform="translate(26.0 -2) rotate(2) translate(-26.0 0)" d="M46 -94 Q39 -112 25 -112 Q6 -112 6 -86 Q6 -63 26 -57 Q48 -50 48 -27 Q48 2 25 2 Q8 2 3 -15"/><path transform="translate(78.0 1) rotate(2) translate(-17.0 0)" d="M15 -104 L14 -10 Q14 2 28 0 M3 -77 L31 -79"/><path transform="translate(129.0 2) rotate(-1.5) translate(-25.0 0)" d="M42 -78 L42 0 M42 -38 Q42 -80 24 -80 Q6 -80 6 -39 Q6 2 24 2 Q42 2 42 -38"/><path transform="translate(182.0 -2) rotate(2.5) translate(-19.0 0)" d="M7 -78 L7 0 M7 -48 Q12 -80 35 -78"/><path transform="translate(227.0 1) rotate(2) translate(-17.0 0)" d="M15 -104 L14 -10 Q14 2 28 0 M3 -77 L31 -79"/><path transform="translate(309.0 -2) rotate(2) translate(-26.0 0)" d="M46 -94 Q39 -112 25 -112 Q6 -112 6 -86 Q6 -63 26 -57 Q48 -50 48 -27 Q48 2 25 2 Q8 2 3 -15"/><path transform="translate(372.0 2) rotate(-1.5) translate(-28.0 0)" d="M4 -78 L13 0 L28 -52 L43 0 L52 -78"/><path transform="translate(418.0 -3) rotate(3) translate(-9.0 0)" d="M9 -76 L9 0 M9 -103 L9 -103"/><path transform="translate(461.5 -1) rotate(1.5) translate(-25.5 0)" d="M7 -78 L7 42 M7 -54 Q9 -80 26 -80 Q44 -80 44 -40 Q44 1 26 1 Q10 1 7 -22"/><path transform="translate(505.0 -3) rotate(3) translate(-9.0 0)" d="M9 -76 L9 0 M9 -103 L9 -103"/><path transform="translate(547.5 2) rotate(-1.5) translate(-24.5 0)" d="M7 -78 L7 0 M7 -52 Q10 -80 27 -80 Q42 -80 42 -55 L41 0"/><path transform="translate(606.0 -1) rotate(2) translate(-25.0 0)" d="M42 -78 L42 18 Q42 42 22 42 Q9 42 5 32 M42 -40 Q42 -80 24 -80 Q6 -80 6 -41 Q6 -4 24 -4 Q42 -4 42 -40"/></g></svg></button></div>
@@ -360,11 +356,6 @@ frame(0);requestAnimationFrame(tick);
   </div>
   <div class="view" id="vChannels" hidden>
     <div class="bar"><button class="back" id="backMain" type="button" aria-label="Back to settings"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4M10 6l-6 6 6 6"/></svg></button><h2>Channels</h2></div>
-    <div class="search">
-      <input class="field" type="text" id="searchQ" placeholder="Search YouTube channels" autocomplete="off" enterkeyhint="search" aria-label="Search YouTube channels">
-      <button class="pill" id="searchBtn" type="button">Search</button>
-    </div>
-    <div id="searchResults"></div>
     <div class="sec">
       <div class="listbar">
         <span id="pickedCount"></span>
@@ -377,8 +368,9 @@ frame(0);requestAnimationFrame(tick);
 </div>
 
 <script>
-// Paste your key here to skip entering it in settings:
-const API_KEY="";
+// ===== YOUR YOUTUBE API KEY GOES BETWEEN THE QUOTES BELOW =====
+// Restrict it in Google Cloud, since anyone can read this file.
+const API_KEY="AIzaSyA-eefBtW_kQUbGq5AoWmyLQSlIF-hBBRQ";
 const SIX_HOURS=6*3600*1000;
 const COLORS=["#ffc93c","#ff8fa3","#7cc6ff","#9be3b4","#c9a7ff","#ffb36b"];
 const CATALOG=[  // [id, name, handle, on by default, title filter]
@@ -431,16 +423,78 @@ const CATALOG=[  // [id, name, handle, on by default, title filter]
   ["dreamenglish","Dream English Kids","@DreamEnglishKids"],
   ["babybus","BabyBus","@BabyBus"],
   ["toddlerfun","Toddler Fun Learning","@ToddlerFunLearning"],
-  ["morphle","Morphle","@Morphle"]
+  ["morphle","Morphle","@Morphle"],
+  ["adley","A for Adley","@AforAdley"],
+  ["misterrogers","Mister Rogers' Neighborhood","@MisterRogersNeighborhood"],
+  ["danieltiger","Daniel Tiger's Neighborhood","@DanielTigersNeighborhood"],
+  ["curiousgeorge","Curious George","@CuriousGeorge"],
+  ["wildkratts","Wild Kratts","@WildKratts"],
+  ["mapleleaf","Maple Leaf Learning","@MapleLeafLearning"],
+  ["singingwalrus","The Singing Walrus","@TheSingingWalrus"],
+  ["scratchgarden","Scratch Garden","@ScratchGarden"],
+  ["msmoni","Ms Moni","@MsMoni"],
+  ["blippiwonders","Blippi Wonders","@BlippiWonders"],
+  ["meekah","Meekah","@Meekah"],
+  ["laurieberkner","Laurie Berkner","@LaurieBerkner"],
+  ["natgeokids","Nat Geo Kids","@NatGeoKids"],
+  ["brightly","Brightly Storytime","@BrightlyStorytime"],
+  ["artforkids","Art for Kids Hub","@ArtforKidsHub"],
+  ["geckosgarage","Gecko's Garage","@GeckosGarage"],
+  ["benholly","Ben and Holly's Little Kingdom","@BenandHollysLittleKingdom"],
+  ["blaze","Blaze and the Monster Machines","@BlazeandtheMonsterMachines"],
+  ["dora","Dora the Explorer","@DoraTheExplorer"],
+  ["firemansam","Fireman Sam","@FiremanSamOfficial"],
+  ["octonauts","Octonauts","@Octonauts"],
+  ["shaun","Shaun the Sheep","@ShaunTheSheep"],
+  ["pingu","Pingu","@Pingu"],
+  ["teletubbies","Teletubbies","@Teletubbies"],
+  ["oddbods","Oddbods","@Oddbods"],
+  ["superwings","Super Wings","@SuperWings"],
+  ["robocarpoli","Robocar POLI","@RobocarPOLI"],
+  ["scishowkids","SciShow Kids","@SciShowKids"],
+  ["peekaboo","Peekaboo Kidz","@PeekabooKidz"],
+  ["homeschoolpop","Homeschool Pop","@HomeschoolPop"],
+  ["rocknlearn","Rock 'N Learn","@RockNLearn"],
+  ["havefunteaching","Have Fun Teaching","@HaveFunTeaching"],
+  ["pancakemanor","Pancake Manor","@PancakeManor"],
+  ["treehouse","Treehouse Direct","@TreehouseDirect"],
+  ["cartoonito","Cartoonito","@Cartoonito"],
+  ["gabby","Gabby's Dollhouse","@GabbysDollhouse"],
+  ["kidtime","Kid Time StoryTime","@KidTimeStoryTime"],
+  ["storyline","Storyline Online","@StorylineOnline"],
+  ["bigblock","Big Block SingSong","@BigBlockSingSong"],
+  ["cbeebies","CBeebies","@CBeebies"],
+  ["netflixjr","Netflix Jr.","@NetflixJr"],
+  ["genevieve","Genevieve's Playhouse","@GenevievesPlayhouse"],
+  ["crashcoursekids","Crash Course Kids","@CrashCourseKids"],
+  ["arthur","Arthur","@Arthur"],
+  ["bobbuilder","Bob the Builder","@BobTheBuilder"],
+  ["paddington","Paddington","@Paddington"],
+  ["bing","Bing","@BingBunny"],
+  ["puffinrock","Puffin Rock","@PuffinRock"],
+  ["miffy","Miffy","@Miffy"],
+  ["elinor","Elinor Wonders Why","@ElinorWondersWhy"]
 ].map(([id,name,handle,on,filter])=>({id,name,handle,on:!!on,filter:filter||""}));
 const KEY="tinyswipe.v1";
 let S;
 function load(){
   try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
   if(!S||!S.creators){S={apiKey:API_KEY,lastPull:0,limit:10,maxSec:0,creators:[]}}
-  if(S.v!==3){S.creators.forEach(c=>{c.auto=[];c.err=""});S.lastPull=0;S.v=3}
+  if(S.v!==3&&S.v!==4){S.creators.forEach(c=>{c.auto=[];c.err=""});S.lastPull=0;S.v=3}
+  if(S.v===3){S.creators.forEach(c=>{if(!c.auto.length)c.err=""});S.v=4}
   for(const c of CATALOG){if(!S.creators.some(x=>x.id===c.id))S.creators.push({...c,auto:[],manual:[]})}
-  if(!S.apiKey&&API_KEY)S.apiKey=API_KEY;
+  // merge hand-added duplicates of built-in channels (same @handle or same YouTube channel)
+  const norm=x=>(x||"").toLowerCase();
+  S.creators=S.creators.filter(c=>{
+    if(CATALOG.some(k=>k.id===c.id))return true;
+    const twin=S.creators.find(k=>k!==c&&CATALOG.some(z=>z.id===k.id)&&((c.handle&&norm(k.handle)===norm(c.handle))||(c.channelId&&k.channelId===c.channelId)));
+    if(!twin)return true;
+    if(c.on)twin.on=true;
+    if(!twin.auto.length&&c.auto&&c.auto.length){twin.auto=c.auto;twin.err=""}
+    if(!twin.thumb&&c.thumb)twin.thumb=c.thumb;
+    return false;
+  });
+  S.apiKey=API_KEY;   // always use the built-in key; parents never see it
   S.creators.forEach(c=>{c.manual=c.manual||[];c.auto=c.auto||[]});
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -470,7 +524,7 @@ function buildFeed(){
 function creatorOf(id){return S.creators.find(c=>c.id===id)}
 function colorOf(id){return COLORS[S.creators.findIndex(c=>c.id===id)%COLORS.length]}
 
-function needsSetup(){return !S.apiKey||!S.creators.some(c=>c.on)}
+function needsSetup(){return !S.creators.some(c=>c.on)}
 let atSetup=false;   // true after leaving Settings with the back arrow
 function showSetup(){const on=(needsSetup()||atSetup)&&!parentOpen;$("setup").hidden=!on;$("setup").classList.toggle("light",S.theme==="light");$("lock").hidden=on||parentOpen;return on}
 // same press-down effect on both big buttons; the action runs after the press is seen
@@ -490,8 +544,8 @@ function render(){
   $("empty").hidden=feed.length>0||showSetup();
   if(!feed.length){
     const on=S.creators.filter(c=>c.on),bad=on.find(c=>c.err);
-    $("empty").querySelector("h1").textContent=S.apiKey?"No videos yet":"Grown-up setup";
-    $("empty").querySelector("p").textContent=!S.apiKey?"Tap the lock, then add your API key in Settings.":
+    $("empty").querySelector("h1").textContent="No videos yet";
+    $("empty").querySelector("p").textContent=!S.apiKey?"Videos can't load right now. Please try again later.":
       !on.length?"No channels are on. Tap the lock and turn some on in Channels.":
       bad?`${bad.name}: ${bad.err}. Tap the lock to check Channels.`:"Tap the lock and choose Refresh videos.";
   }
@@ -661,7 +715,11 @@ function goTo(i){
 document.addEventListener("pointerdown",()=>{if(needSound&&!parentOpen)unmute()},true);
 
 async function fetchThumbs(){
-  const need=S.creators.filter(c=>c.on&&c.channelId&&!c.thumb);
+  if(!S.apiKey)return;
+  for(const c of S.creators.filter(c=>!c.channelId&&c.handle)){          // find each channel once (1 unit each)
+    try{const j=await api("channels",{part:"id",forHandle:c.handle});if(j.items&&j.items.length)c.channelId=j.items[0].id}catch(e){}
+  }
+  const need=S.creators.filter(c=>c.channelId&&!c.thumb);
   for(let k=0;k<need.length;k+=50){
     try{const j=await api("channels",{part:"snippet",id:need.slice(k,k+50).map(c=>c.channelId).join(",")});
       for(const it of j.items||[]){const c=need.find(x=>x.channelId===it.id);if(!c)continue;
@@ -697,15 +755,14 @@ $("lock").addEventListener("click",openParent);
 
 function openParent(){
   parentOpen=true;pauseAll();$("setup").hidden=true;$("startMsg").textContent="";
-  $("apiKey").value=S.apiKey;$("limit").value=S.limit;$("maxSec").value=S.maxSec;
+$("limit").value=S.limit;$("maxSec").value=S.maxSec;
   applyTheme();showView("vMain");drawCreators();$("parent").hidden=false;$("lock").hidden=true;
 }
 function closeParent(start){
-  S.apiKey=$("apiKey").value.trim();
   S.limit=Math.max(0,parseInt($("limit").value)||0);
   S.maxSec=Math.max(0,parseInt($("maxSec").value)||0);
   save();
-  if(start&&needsSetup()){$("startMsg").textContent=!S.apiKey?"Add your API key first.":"Turn on at least one channel first.";return}
+  if(start&&needsSetup()){$("startMsg").textContent="Turn on at least one channel first.";return}
   atSetup=!start;parentOpen=false;$("parent").hidden=true;$("lock").hidden=false;
   if(showSetup()){pauseAll();return}
   const need=S.creators.filter(c=>c.on&&!c.auto.length&&!c.err);
@@ -720,7 +777,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.11.02 · build 21:45";
+const APP_VERSION="2026.11.02 · build 22:16";
 // Status bar follows what's on screen (like Facebook): pink on the pink screens,
 // dark in dark-mode Settings, black behind the videos.
 (function(){
@@ -740,10 +797,9 @@ $("appVersion").textContent="Tiny Swiper "+APP_VERSION;
 function applyTheme(){$("parent").classList.toggle("light",S.theme!=="dark");$("darkMode").checked=S.theme==="dark"}
 $("darkMode").addEventListener("change",e=>{S.theme=e.target.checked?"dark":"light";save();applyTheme()});
 const INFO={
-  channels:["Channels","Choose which YouTube channels your child sees. When a channel is on, Tiny Swiper pulls its newest Shorts. Only videos YouTube marks as Made for Kids are shown."],
+  channels:["Channels","Choose which channels your child sees from Tiny Swiper\'s hand-picked list. When a channel is on, Tiny Swiper pulls its newest Shorts. Only videos YouTube marks as Made for Kids are shown."],
   limit:["Videos per session","How many videos your child can watch before a goodbye screen appears. Every new video they swipe to counts as one. Set to 0 for no limit."],
   maxSec:["Max video length","Stops each video after this many seconds and moves on to the next one. Set to 0 to let every video play to the end."],
-  apiKey:["API key","A free key from Google that lets Tiny Swiper look up each channel's Shorts. You only enter it once, and it stays on this device."],
   dark:["Dark mode","Switches Settings to a dark background. It doesn't change the videos."]
 };
 function openInfo(k){const [t,x]=INFO[k];$("infoTitle").textContent=t;$("infoText").textContent=x;$("infoPop").hidden=false;$("infoOk").focus()}
@@ -752,7 +808,7 @@ $("parent").addEventListener("keydown",e=>{const b=e.target.closest&&e.target.cl
 $("infoOk").addEventListener("click",()=>$("infoPop").hidden=true);
 $("infoPop").addEventListener("click",e=>{if(e.target.id==="infoPop")$("infoPop").hidden=true});
 function showView(id){$("vMain").hidden=id!=="vMain";$("vChannels").hidden=id!=="vChannels";$("parent").scrollTop=0}
-$("openChannels").addEventListener("click",()=>{showView("vChannels");drawCreators()});
+$("openChannels").addEventListener("click",()=>{showView("vChannels");drawCreators();fetchThumbs().then(()=>{if(!$("vChannels").hidden)drawCreators()})});
 $("backMain").addEventListener("click",()=>{showView("vMain");countPicked()});
 
 function drawCreators(){
@@ -762,7 +818,7 @@ function drawCreators(){
   S.creators.forEach((c,idx)=>{
     if(q&&!c.name.toLowerCase().includes(q))return;
     const n=c.auto.length+c.manual.length,isCustom=custom.includes(c);
-    const info=c.err?`<span class="err">${esc(c.err)}</span>`:(n?n+" videos":(c.on?(S.apiKey?"Loading…":"Add API key in Settings"):"Off"));
+    const info=c.err?`<span class="err">${esc(c.err)}</span>`:(n?n+" videos":(c.on?"Loading…":"Off"));
     const d=document.createElement("label");d.className="item creator";
     d.innerHTML=`${c.thumb?`<img class="av" src="${esc(c.thumb)}" alt="">`:`<span class="av">${esc(c.name[0])}</span>`}
       <span class="t">${esc(c.name)}<small>${info}</small></span>
@@ -820,43 +876,11 @@ function startLoading(done){
   },50);
 }
 function queuePull(list){
-  S.apiKey=$("apiKey").value.trim();save();
   if(!S.apiKey||!list.length)return;
   loadT+=list.length;loadBar();
   pullChain=pullChain.then(()=>pullAll(list,null,2,4,true)).catch(()=>{});
 }
 
-async function doSearch(){
-  const q=$("searchQ").value.trim(),box=$("searchResults");if(!q)return;
-  S.apiKey=$("apiKey").value.trim();save();
-  if(!S.apiKey){box.innerHTML='<p class="foot" style="padding:12px 16px">Add your API key in Settings to search.</p>';return}
-  box.innerHTML='<p class="foot" style="padding:12px 16px">Searching…</p>';
-  try{
-    let items=[];
-    if(q[0]==="@"){
-      const j=await api("channels",{part:"snippet",forHandle:q});
-      items=(j.items||[]).map(x=>({id:x.id,title:x.snippet.title,thumb:x.snippet.thumbnails.default.url,handle:q}));
-    }
-    if(!items.length){
-      const j=await api("search",{part:"snippet",type:"channel",q,maxResults:8,safeSearch:"strict"});
-      items=j.items.map(x=>({id:x.snippet.channelId,title:x.snippet.title,thumb:x.snippet.thumbnails.default.url,handle:""}));
-    }
-    box.innerHTML=items.length?"":'<p class="foot" style="padding:12px 16px">No channels found.</p>';
-    for(const it of items){
-      const have=S.creators.find(c=>c.channelId===it.id);
-      const r=document.createElement("div");r.className="result";
-      r.className="item";r.innerHTML=`<img class="av" src="${esc(it.thumb)}" alt=""><span class="t">${esc(it.title)}</span><button class="pill" type="button" ${have?"disabled":""}>${have?"Added":"Add"}</button>`;
-      r.querySelector("button").addEventListener("click",e=>{
-        const c={id:"ch_"+it.id,name:it.title,handle:it.handle,channelId:it.id,on:true,auto:[],manual:[]};
-        S.creators.unshift(c);save();e.target.textContent="Added";e.target.disabled=true;
-        drawCreators();queuePull([c]);
-      });
-      box.appendChild(r);
-    }
-  }catch(e){box.innerHTML=`<p class="foot" style="padding:12px 16px">Search failed: ${esc(e.message)}</p>`}
-}
-$("searchBtn").addEventListener("click",doSearch);
-$("searchQ").addEventListener("keydown",e=>{if(e.key==="Enter")doSearch()});
 /* ---------- YouTube Data API ---------- */
 async function api(path,params){
   const u=new URL("https://www.googleapis.com/youtube/v3/"+path);
@@ -873,7 +897,7 @@ async function pullCreator(c,maxPages=2){
     let j=c.handle?await api("channels",{part:"id",forHandle:c.handle}):{};
     if(j.items&&j.items.length)c.channelId=j.items[0].id;
     else{
-      j=await api("search",{part:"snippet",type:"channel",q:c.name,maxResults:1});
+      j=await api("search",{part:"snippet",type:"channel",q:c.name+" official kids",maxResults:1,safeSearch:"strict"});
       if(!j.items||!j.items.length)throw new Error("Channel not found");
       c.channelId=j.items[0].snippet.channelId;
     }
@@ -904,7 +928,8 @@ async function pullCreator(c,maxPages=2){
     return out.slice(0,PER_CREATOR);
   }
   let clips=[],seenShorts=0,notKids=0;
-  try{clips=await walk("UUSH"+base,180)}catch(e){ if(!/not ?found/i.test(e.message))throw e }   // true Shorts only
+  try{clips=await walk("UUSH"+base,180)}catch(e){ if(!/found|playlist/i.test(e.message))throw e }   // the channel's Shorts list
+  if(!clips.length){try{clips=await walk("UU"+base,60)}catch(e){}}                                    // else its uploads under 1 minute
   if(!clips.length)throw new Error(!seenShorts?"This channel has no Shorts":notKids===seenShorts?"Shorts aren't marked Made for Kids":"No playable Shorts");
   return clips;
 }
@@ -916,7 +941,8 @@ async function pullAll(list,onFirst,maxPages=2,workers=4,track=false){
     while(queue.length){
       const c=queue.shift();
       try{const got=await pullCreator(c,maxPages);if(got.length>=c.auto.length||maxPages>1)c.auto=got;c.err="";total+=c.auto.length}
-      catch(e){c.auto=[];c.err=e.message}
+      catch(e){c.auto=[];const m=e.message||"";
+        c.err=/quota/i.test(m)?"Daily YouTube limit reached. Tries again tomorrow.":/key/i.test(m)?"Couldn't load right now. Tries again later.":/found/i.test(m)&&!/Shorts/.test(m)?"Channel not found":/Shorts|Kids/.test(m)?m:"Couldn't load right now. Tries again later."}
       if(track){loadD++;loadBar()}
       save();if(parentOpen)drawCreators();
       if(!fired&&total&&onFirst){fired=true;onFirst()}
