@@ -62,6 +62,8 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 #stage .slot{position:absolute;inset:0;transform:translateY(200%);will-change:transform;background:#000;overflow:hidden}
 #stage .slot::before,#stage .slot::after{content:"";position:absolute;left:0;right:0;height:3px;background:#000;z-index:1;pointer-events:none}
 #stage .slot::before{top:0}
+/* YouTube shows a link button bottom-left only while paused; cover it then (that corner is black in the paused layout) */
+#pauseMask{position:absolute;left:0;bottom:0;width:104px;height:104px;background:#000;z-index:2;pointer-events:none}
 #stage .slot::after{bottom:0}
 /* size each player to the video's own 9:16 shape and fill the screen top to bottom (on tall phones the right edge trims a little) */
 /* the player fills the screen; YouTube then uses its Shorts layout (logo top left, channel bottom left) */
@@ -95,17 +97,16 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
   border:0;border-radius:999px;padding:12px 22px;background:var(--sun);color:var(--ink);font:800 18px/1 var(--display);
   box-shadow:0 6px 0 #d9a51c}
 #lock{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));z-index:6;
-  display:flex;align-items:center;gap:8px;-webkit-user-select:none;user-select:none}
+  display:flex;align-items:flex-start;gap:8px;-webkit-user-select:none;user-select:none}
 #gear{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);color:#fff;display:grid;place-items:center}
-#slide{position:relative;width:44px;height:44px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);touch-action:none;overflow:hidden;transition:width .18s ease}
-#slide.open{width:150px}
-#slideText{position:absolute;inset:0;display:grid;place-items:center;padding-right:40px;font:600 12px/1 Roboto,system-ui,sans-serif;color:rgba(255,255,255,.9);pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .12s}
+#slide{position:relative;width:44px;height:44px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);touch-action:none;overflow:hidden;transition:height .18s ease}
+#slide.open{height:160px}
+#slideText{position:absolute;inset:0;display:grid;place-items:center;padding-top:40px;writing-mode:vertical-rl;font:600 12px/1 Roboto,system-ui,sans-serif;color:rgba(255,255,255,.9);pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .12s}
 #slide.open #slideText{opacity:1;transition-delay:.08s}
 #knob{position:absolute;top:3px;right:3px;width:36px;height:36px;border-radius:50%;background:#fff;color:#2A2140;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 #knob.anim{transition:transform .2s ease}
 #lock.locked #gear{display:none}
-#lock.locked #slide{background:rgba(255,94,135,.85)}
-#lock.locked #knob{color:#FF5E87}
+
 
 .modal{position:fixed;inset:0;z-index:8;display:grid;place-items:center;padding:24px;background:rgba(20,16,40,.55)}
 .modal .card{width:min(100%,340px);background:#fff;border-radius:24px;padding:24px 20px 20px;text-align:center;display:flex;flex-direction:column;gap:18px}
@@ -299,7 +300,7 @@ frame(0);requestAnimationFrame(tick);
 })();
 </script>
 
-<div id="stage"><div class="slot" id="slotA"><div id="pA"></div></div><div class="slot" id="slotB"><div id="pB"></div></div><div class="slot" id="slotC"><div id="pC"></div></div></div>
+<div id="stage"><div class="slot" id="slotA"><div id="pA"></div></div><div class="slot" id="slotB"><div id="pB"></div></div><div class="slot" id="slotC"><div id="pC"></div></div><div id="pauseMask" hidden></div></div>
 <div id="feed" aria-label="Video feed"></div>
 
 <div id="update" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="updTitle">
@@ -608,8 +609,9 @@ function showSlot(){placeSlots()}
 // pause button on them. Once the swipe settles, the off-screen ones pause again.
 // Previous and next videos wait paused at their start; only the current one plays.
 let settleT=0;
-function onSwipe(){placeSlots();clearTimeout(settleT);settleT=setTimeout(settle,180)}
+function onSwipe(){$("pauseMask").hidden=true;placeSlots();clearTimeout(settleT);settleT=setTimeout(settle,180)}
 function settle(){                               // once the swipe stops, pause and rewind the off-screen ones
+  maskPause();
   slots.forEach(s=>{if(s.idx>=0&&s.idx!==active){try{if(s.p.getPlayerState()!==2)s.p.pauseVideo();s.p.seekTo(0,true)}catch(e){}}});
 }
 feedEl.addEventListener("scroll",onSwipe,{passive:true});
@@ -634,7 +636,9 @@ function loadInto(s,i,play){
   const o={videoId:feed[i].v,startSeconds:0};if(S.maxSec>0)o.endSeconds=S.maxSec;
   try{s.p.mute();s.p.loadVideoById(o)}catch(e){}
 }
+function maskPause(){const s=cur();let paused=false;try{paused=!!s&&s.p.getPlayerState()===2}catch(e){}$("pauseMask").hidden=!paused}
 function onState(s,st){
+  if(s.idx===active)setTimeout(maskPause,0);
   if(st===1){
     if(s.idx===active&&!parentOpen){
       s.primed=true;showSlot(s);cover(active,false);clearTimeout(wd1);clearTimeout(wd2);
@@ -780,12 +784,12 @@ $("gear").addEventListener("click",openParent);
 // and the app goes full screen so the system bars are hidden.
 (function(){
   const slide=$("slide"),knob=$("knob"),box=$("lock");
-  const MAX=()=>150-36-8;   // travel distance when the bar is open
+  const MAX=()=>160-36-8;   // travel distance when the bar is open (downward)
   let startX=0,base=0,drag=false;
-  function place(x,anim){knob.classList.toggle("anim",!!anim);knob.style.transform=`translateX(${x}px)`}
+  function place(y,anim){knob.classList.toggle("anim",!!anim);knob.style.transform=`translateY(${y}px)`}
   function paint(){
     box.classList.toggle("locked",!!S.locked);slide.setAttribute("aria-checked",S.locked?"true":"false");
-    $("slideText").textContent=S.locked?"‹ Slide to unlock":"‹ Slide to lock";
+    $("slideText").textContent=S.locked?"Slide down to unlock":"Slide down to lock";
     $("shackle").setAttribute("d",S.locked?"M8 11V8a4 4 0 0 1 8 0v3":"M8 11V8a4 4 0 0 1 7.5-2");
     place(0,true);
   }
@@ -798,13 +802,13 @@ $("gear").addEventListener("click",openParent);
       try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
     }
   }
-  slide.addEventListener("pointerdown",e=>{drag=true;startX=e.clientX;base=0;slide.classList.add("open");slide.setPointerCapture(e.pointerId);knob.classList.remove("anim")});
-  slide.addEventListener("pointermove",e=>{if(!drag)return;place(Math.max(-MAX(),Math.min(0,e.clientX-startX)))});
+  slide.addEventListener("pointerdown",e=>{drag=true;startX=e.clientY;base=0;slide.classList.add("open");slide.setPointerCapture(e.pointerId);knob.classList.remove("anim")});
+  slide.addEventListener("pointermove",e=>{if(!drag)return;place(Math.max(0,Math.min(MAX(),e.clientY-startX)))});
   function end(e){
     if(!drag)return;drag=false;
-    const x=Math.max(-MAX(),Math.min(0,e.clientX-startX));
+    const y=Math.max(0,Math.min(MAX(),e.clientY-startX));
     slide.classList.remove("open");
-    if(x<-MAX()*.85)setLocked(!S.locked);
+    if(y>MAX()*.85)setLocked(!S.locked);
     else paint();
   }
   slide.addEventListener("pointerup",end);slide.addEventListener("pointercancel",()=>{drag=false;slide.classList.remove("open");paint()});
@@ -839,7 +843,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.11.02 · build 23:04";
+const APP_VERSION="2026.11.02 · build 23:08";
 // Update check: when a newer version is on GitHub, offer a one-tap restart.
 (function(){
   let dismissed="";
