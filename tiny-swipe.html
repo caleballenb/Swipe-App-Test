@@ -69,7 +69,10 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 .pbox{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 .pbox iframe,.pbox>div{position:absolute;inset:0;width:100%;height:100%;border:0}
 .shield{position:absolute;inset:0;z-index:2}
-.cover{display:none}
+/* a still picture of each video sits on top of it until it is actually playing,
+   so YouTube's pause button is never seen while swiping */
+.cover{position:absolute;inset:3px 0;z-index:1;background-color:#000;background-position:center;background-size:cover;background-repeat:no-repeat;pointer-events:none;transition:opacity .12s}
+.cover.off{opacity:0}
 .chan{position:absolute;left:var(--chanx,94px);top:var(--chany,9px);z-index:3;height:24px;max-width:calc(100% - 160px);
   display:flex;align-items:center;gap:7px;border:0;padding:0;background:#000;color:#fff;font:500 14px/1 var(--body);white-space:nowrap}
 .chan img,.chan i{width:24px;height:24px;border-radius:50%;flex:none;object-fit:cover}
@@ -564,7 +567,7 @@ function render(){
   feed.forEach((clip,i)=>{
     const c=creatorOf(clip.creator)||{name:"?"};
     const s=document.createElement("section");s.className="slide";s.dataset.i=i;
-    s.innerHTML=`<div class="cover"></div><div class="shield"></div>
+    s.innerHTML=`<div class="cover" style="background-image:url(https://i.ytimg.com/vi/${clip.v}/oar2.jpg),url(https://i.ytimg.com/vi/${clip.v}/hqdefault.jpg)"></div><div class="shield"></div>
       <button type="button" class="hot" aria-label="Visit ${esc(c.name)} channel"></button><button type="button" class="hot top" aria-label="Visit ${esc(c.name)} channel"></button>`;
     s.querySelector(".shield").addEventListener("click",()=>togglePlay(i));
     s.querySelectorAll(".hot").forEach(b=>b.addEventListener("click",()=>askVisit(clip.creator)));
@@ -581,6 +584,8 @@ function esc(t){return String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;","
 // three players: previous, current and next, so both neighbours stay visible while swiping
 const slots=[0,1,2].map(()=>({el:null,p:null,ready:false,idx:-1,primed:false}));
 let wd1=0,wd2=0;
+let revealT=0;
+function reveal(i){clearTimeout(revealT);revealT=setTimeout(()=>{if(i===active)cover(i,false)},250)}
 function cover(i,on){const c=feedEl.querySelector(`.slide[data-i="${i}"] .cover`);if(c)c.classList.toggle("off",!on)}
 function fitVideos(){
   const W=innerWidth,H=innerHeight;
@@ -600,6 +605,7 @@ function showSlot(){placeSlots()}
 let settleT=0;
 function onSwipe(){placeSlots();clearTimeout(settleT);settleT=setTimeout(settle,180)}
 function settle(){                               // once the swipe stops, pause and rewind the off-screen ones
+  slots.forEach(s=>{if(s.idx>=0&&s.idx!==active)cover(s.idx,true)});
   slots.forEach(s=>{if(s.idx>=0&&s.idx!==active){try{if(s.p.getPlayerState()!==2)s.p.pauseVideo();s.p.seekTo(0,true)}catch(e){}}});
 }
 feedEl.addEventListener("scroll",onSwipe,{passive:true});
@@ -627,7 +633,7 @@ function loadInto(s,i,play){
 function onState(s,st){
   if(st===1){
     if(s.idx===active&&!parentOpen){
-      s.primed=true;showSlot(s);cover(active,false);clearTimeout(wd1);clearTimeout(wd2);
+      s.primed=true;showSlot(s);reveal(active);clearTimeout(wd1);clearTimeout(wd2);
       setSound(s);noCaptions(s);
       prepNext();
     }else if(!s.primed){s.primed=true;try{s.p.pauseVideo();s.p.seekTo(0,true)}catch(e){}}
@@ -656,7 +662,7 @@ function sync(){                               // make sure the current clip is 
 function noCaptions(s){if(s.cc)return;s.cc=true;try{s.p.unloadModule("captions");s.p.unloadModule("cc")}catch(e){}}
 function setSound(s){try{if(muted){if(!s.p.isMuted())s.p.mute()}else if(s.p.isMuted()){s.p.unMute();s.p.setVolume(100)}}catch(e){}}
 function startClip(s){
-  showSlot(s);cover(active,false);
+  showSlot(s);try{if(s.p.getPlayerState()===1)reveal(active)}catch(e){}
   setSound(s);
   try{if(s.p.getPlayerState()!==1)s.p.playVideo()}catch(e){}
   prepNext();
@@ -789,7 +795,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.11.02 · build 22:24";
+const APP_VERSION="2026.11.02 · build 22:32";
 // Update check: when a newer version is on GitHub, offer a one-tap restart.
 (function(){
   let dismissed="";
