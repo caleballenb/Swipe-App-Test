@@ -776,8 +776,8 @@ const tag=document.createElement("script");tag.src="https://www.youtube.com/ifra
 /* ---------- parent gate: hold 3s ---------- */
 $("gear").addEventListener("click",openParent);
 // ===== App lock: slide all the way across to lock or unlock =====
-// Locked: settings and channel links are off, the back gesture stays in the app,
-// and the app goes full screen so the system bars are hidden.
+// Locked: settings and channel links are off and the back gesture stays in the app.
+// Nothing on screen moves.
 (function(){
   const slide=$("slide"),knob=$("knob"),box=$("lock");
   const MAX=()=>150-36-8;   // travel distance when the bar is open (to the left)
@@ -791,12 +791,7 @@ $("gear").addEventListener("click",openParent);
   }
   function setLocked(on){
     S.locked=on;save();paint();
-    if(on){
-      try{if(!document.fullscreenElement)document.documentElement.requestFullscreen({navigationUI:"hide"}).catch(()=>{})}catch(e){}
-      try{history.pushState({tsLock:1},"")}catch(e){}
-    }else{
-      try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
-    }
+    if(on){try{history.pushState({tsLock:1},"")}catch(e){}}
   }
   slide.addEventListener("pointerdown",e=>{drag=true;startX=e.clientX;base=0;slide.classList.add("open");slide.setPointerCapture(e.pointerId);knob.classList.remove("anim")});
   slide.addEventListener("pointermove",e=>{if(!drag)return;place(Math.max(-MAX(),Math.min(0,e.clientX-startX)))});
@@ -839,7 +834,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.11.02 · build 23:15";
+const APP_VERSION="2026.11.02 · build 23:18";
 // Update check: when a newer version is on GitHub, offer a one-tap restart.
 (function(){
   let dismissed="";
