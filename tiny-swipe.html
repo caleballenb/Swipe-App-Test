@@ -301,7 +301,7 @@ frame(0);requestAnimationFrame(tick);
 <div id="update" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="updTitle">
   <div class="card upd">
     <p id="updTitle">Tiny Swiper has been updated!</p>
-    <span class="updText">For the best and safest experience, restart the app. Tap <b>Restart</b>, or close the app completely (swipe it away) and open it again.</span>
+    <span class="updText">Tap <b>Restart</b> to get the newest version. Your settings and channels stay the same.</span>
     <div class="btns"><button type="button" class="yes" id="updNow">Restart</button><button type="button" class="later" id="updLater">Later</button></div>
   </div>
 </div>
@@ -795,7 +795,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.11.02 · build 22:32";
+const APP_VERSION="2026.11.02 · build 22:36";
 // Update check: when a newer version is on GitHub, offer a one-tap restart.
 (function(){
   let dismissed="";
