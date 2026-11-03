@@ -64,8 +64,8 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 #stage .slot::before{top:0}
 #stage .slot::after{bottom:0}
 /* size each player to the video's own 9:16 shape and fill the screen top to bottom (on tall phones the right edge trims a little) */
-#stage iframe,#stage .slot>div{position:absolute;left:0;top:50%;width:var(--vw,100%);height:var(--vh,100%);transform:translateY(-50%);border:0}
-@media (orientation:landscape){#stage iframe,#stage .slot>div{left:50%;transform:translate(-50%,-50%)}}
+/* the player fills the screen; YouTube then uses its Shorts layout (logo top left, channel bottom left) */
+#stage iframe,#stage .slot>div{position:absolute;inset:0;width:100%;height:100%;border:0}
 .pbox{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 .pbox iframe,.pbox>div{position:absolute;inset:0;width:100%;height:100%;border:0}
 .shield{position:absolute;inset:0;z-index:2}
@@ -97,13 +97,14 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
 #lock{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));z-index:6;
   display:flex;align-items:center;gap:8px;-webkit-user-select:none;user-select:none}
 #gear{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);color:#fff;display:grid;place-items:center}
-#slide{position:relative;width:140px;height:44px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);touch-action:none;overflow:hidden}
-#slideText{position:absolute;inset:0;display:grid;place-items:center;padding-left:38px;font:600 12px/1 Roboto,system-ui,sans-serif;color:rgba(255,255,255,.85);pointer-events:none}
-#knob{position:absolute;top:4px;left:4px;width:36px;height:36px;border-radius:50%;background:#fff;color:#2A2140;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+#slide{position:relative;width:44px;height:44px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);touch-action:none;overflow:hidden;transition:width .18s ease}
+#slide.open{width:150px}
+#slideText{position:absolute;inset:0;display:grid;place-items:center;padding-right:40px;font:600 12px/1 Roboto,system-ui,sans-serif;color:rgba(255,255,255,.9);pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .12s}
+#slide.open #slideText{opacity:1;transition-delay:.08s}
+#knob{position:absolute;top:3px;right:3px;width:36px;height:36px;border-radius:50%;background:#fff;color:#2A2140;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 #knob.anim{transition:transform .2s ease}
 #lock.locked #gear{display:none}
 #lock.locked #slide{background:rgba(255,94,135,.85)}
-#lock.locked #slideText{padding-left:0;padding-right:40px}
 #lock.locked #knob{color:#FF5E87}
 
 .modal{position:fixed;inset:0;z-index:8;display:grid;place-items:center;padding:24px;background:rgba(20,16,40,.55)}
@@ -779,14 +780,14 @@ $("gear").addEventListener("click",openParent);
 // and the app goes full screen so the system bars are hidden.
 (function(){
   const slide=$("slide"),knob=$("knob"),box=$("lock");
-  const MAX=()=>slide.clientWidth-knob.offsetWidth-8;
+  const MAX=()=>150-36-8;   // travel distance when the bar is open
   let startX=0,base=0,drag=false;
   function place(x,anim){knob.classList.toggle("anim",!!anim);knob.style.transform=`translateX(${x}px)`}
   function paint(){
     box.classList.toggle("locked",!!S.locked);slide.setAttribute("aria-checked",S.locked?"true":"false");
-    $("slideText").textContent=S.locked?"Slide to unlock":"Slide to lock";
+    $("slideText").textContent=S.locked?"‹ Slide to unlock":"‹ Slide to lock";
     $("shackle").setAttribute("d",S.locked?"M8 11V8a4 4 0 0 1 8 0v3":"M8 11V8a4 4 0 0 1 7.5-2");
-    place(S.locked?MAX():0,true);
+    place(0,true);
   }
   function setLocked(on){
     S.locked=on;save();paint();
@@ -797,16 +798,16 @@ $("gear").addEventListener("click",openParent);
       try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
     }
   }
-  slide.addEventListener("pointerdown",e=>{drag=true;startX=e.clientX;base=S.locked?MAX():0;slide.setPointerCapture(e.pointerId);knob.classList.remove("anim")});
-  slide.addEventListener("pointermove",e=>{if(!drag)return;place(Math.max(0,Math.min(MAX(),base+e.clientX-startX)))});
+  slide.addEventListener("pointerdown",e=>{drag=true;startX=e.clientX;base=0;slide.classList.add("open");slide.setPointerCapture(e.pointerId);knob.classList.remove("anim")});
+  slide.addEventListener("pointermove",e=>{if(!drag)return;place(Math.max(-MAX(),Math.min(0,e.clientX-startX)))});
   function end(e){
     if(!drag)return;drag=false;
-    const x=Math.max(0,Math.min(MAX(),base+e.clientX-startX));
-    if(!S.locked&&x>MAX()*.85)setLocked(true);
-    else if(S.locked&&x<MAX()*.15)setLocked(false);
+    const x=Math.max(-MAX(),Math.min(0,e.clientX-startX));
+    slide.classList.remove("open");
+    if(x<-MAX()*.85)setLocked(!S.locked);
     else paint();
   }
-  slide.addEventListener("pointerup",end);slide.addEventListener("pointercancel",()=>{drag=false;paint()});
+  slide.addEventListener("pointerup",end);slide.addEventListener("pointercancel",()=>{drag=false;slide.classList.remove("open");paint()});
   // back gesture: while locked, stay on the videos
   addEventListener("popstate",()=>{if(S.locked){try{history.pushState({tsLock:1},"")}catch(e){}}});
   // if the app is reopened while locked, stay locked
@@ -838,7 +839,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.11.02 · build 22:56";
+const APP_VERSION="2026.11.02 · build 23:04";
 // Update check: when a newer version is on GitHub, offer a one-tap restart.
 (function(){
   let dismissed="";
