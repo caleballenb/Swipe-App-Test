@@ -95,10 +95,16 @@ button:focus:not(:focus-visible),[role=button]:focus:not(:focus-visible){outline
   border:0;border-radius:999px;padding:12px 22px;background:var(--sun);color:var(--ink);font:800 18px/1 var(--display);
   box-shadow:0 6px 0 #d9a51c}
 #lock{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));z-index:6;
-  width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;display:grid;place-items:center;
-  touch-action:none;-webkit-user-select:none;user-select:none}
-#lock svg{position:absolute;inset:0}
-#lock circle.r{transition:stroke-dashoffset .1s linear}
+  display:flex;align-items:center;gap:8px;-webkit-user-select:none;user-select:none}
+#gear{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);color:#fff;display:grid;place-items:center}
+#slide{position:relative;width:140px;height:44px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);touch-action:none;overflow:hidden}
+#slideText{position:absolute;inset:0;display:grid;place-items:center;padding-left:38px;font:600 12px/1 Roboto,system-ui,sans-serif;color:rgba(255,255,255,.85);pointer-events:none}
+#knob{position:absolute;top:4px;left:4px;width:36px;height:36px;border-radius:50%;background:#fff;color:#2A2140;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+#knob.anim{transition:transform .2s ease}
+#lock.locked #gear{display:none}
+#lock.locked #slide{background:rgba(255,94,135,.85)}
+#lock.locked #slideText{padding-left:0;padding-right:40px}
+#lock.locked #knob{color:#FF5E87}
 
 .modal{position:fixed;inset:0;z-index:8;display:grid;place-items:center;padding:24px;background:rgba(20,16,40,.55)}
 .modal .card{width:min(100%,340px);background:#fff;border-radius:24px;padding:24px 20px 20px;text-align:center;display:flex;flex-direction:column;gap:18px}
@@ -311,13 +317,13 @@ frame(0);requestAnimationFrame(tick);
 <div id="empty" class="screen" hidden>
   <div class="wave">🔒</div>
   <h1>Grown-up setup</h1>
-  <p>No clips loaded yet. Tap the lock button to open parent settings.</p>
+  <p>No videos yet. Tap the gear to open Settings.</p>
 </div>
 
 <div id="done" class="screen" hidden>
   <div class="wave">👋</div>
   <h1>All done! Bye-bye!</h1>
-  <p>That's all the videos for now. A grown-up can tap the lock to start more.</p>
+  <p>That's all the videos for now. A grown-up can unlock the app and tap the gear to start more.</p>
 </div>
 
 <div id="visit" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="visitQ">
@@ -333,11 +339,13 @@ frame(0);requestAnimationFrame(tick);
 </div>
 
 
-<button id="lock" type="button" aria-label="Open parent settings">
-  <svg viewBox="0 0 44 44" aria-hidden="true"><circle class="r" cx="22" cy="22" r="20" fill="none" stroke="#ffc93c" stroke-width="4"
-    stroke-dasharray="125.7" stroke-dashoffset="125.7" transform="rotate(-90 22 22)"/></svg>
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="position:static"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-</button>
+<div id="lock">
+  <button id="gear" type="button" aria-label="Open parent settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  <div id="slide" role="switch" aria-checked="false" aria-label="Slide to lock the app">
+    <span id="slideText">Slide to lock</span>
+    <span id="knob"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path id="shackle" d="M8 11V8a4 4 0 0 1 7.5-2"/></svg></span>
+  </div>
+</div>
 
 <div id="parent" hidden>
   <input type="hidden" id="apiKey">
@@ -492,8 +500,9 @@ let S;
 function load(){
   try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
   if(!S||!S.creators){S={apiKey:API_KEY,lastPull:0,limit:10,maxSec:0,creators:[]}}
-  if(S.v!==3&&S.v!==4){S.creators.forEach(c=>{c.auto=[];c.err=""});S.lastPull=0;S.v=3}
+  if(S.v!==3&&S.v!==4&&S.v!==5){S.creators.forEach(c=>{c.auto=[];c.err=""});S.lastPull=0;S.v=3}
   if(S.v===3){S.creators.forEach(c=>{if(!c.auto.length)c.err=""});S.v=4}
+  if(S.v===4){S.creators.forEach(c=>{c.auto=[];c.err=""});S.lastPull=0;S.v=5}   // reload: Shorts only
   for(const c of CATALOG){if(!S.creators.some(x=>x.id===c.id))S.creators.push({...c,auto:[],manual:[]})}
   // merge hand-added duplicates of built-in channels (same @handle or same YouTube channel)
   const norm=x=>(x||"").toLowerCase();
@@ -558,8 +567,8 @@ function render(){
     const on=S.creators.filter(c=>c.on),bad=on.find(c=>c.err);
     $("empty").querySelector("h1").textContent="No videos yet";
     $("empty").querySelector("p").textContent=!S.apiKey?"Videos can't load right now. Please try again later.":
-      !on.length?"No channels are on. Tap the lock and turn some on in Channels.":
-      bad?`${bad.name}: ${bad.err}. Tap the lock to check Channels.`:"Tap the lock and choose Refresh videos.";
+      !on.length?"No channels are on. Tap the gear and turn some on in Channels.":
+      bad?`${bad.name}: ${bad.err}. Tap the gear to check Channels.`:"Videos are on their way. Check back in a moment.";
   }
   feed.forEach((clip,i)=>{
     const c=creatorOf(clip.creator)||{name:"?"};
@@ -682,6 +691,7 @@ function watch(i){                          // recover from a clip that won't st
 }
 let visitTarget=null;
 function askVisit(id){
+  if(S.locked)return;   // channel links are off while the app is locked
   const c=creatorOf(id);if(!c)return;visitTarget=c;
   pauseAll();
   resetVisit();$("visitQ").textContent=`Visit ${c.name} channel?`;
@@ -763,7 +773,46 @@ window.onYouTubeIframeAPIReady=async()=>{
 const tag=document.createElement("script");tag.src="https://www.youtube.com/iframe_api";document.head.appendChild(tag);
 
 /* ---------- parent gate: hold 3s ---------- */
-$("lock").addEventListener("click",openParent);
+$("gear").addEventListener("click",openParent);
+// ===== App lock: slide all the way across to lock or unlock =====
+// Locked: settings and channel links are off, the back gesture stays in the app,
+// and the app goes full screen so the system bars are hidden.
+(function(){
+  const slide=$("slide"),knob=$("knob"),box=$("lock");
+  const MAX=()=>slide.clientWidth-knob.offsetWidth-8;
+  let startX=0,base=0,drag=false;
+  function place(x,anim){knob.classList.toggle("anim",!!anim);knob.style.transform=`translateX(${x}px)`}
+  function paint(){
+    box.classList.toggle("locked",!!S.locked);slide.setAttribute("aria-checked",S.locked?"true":"false");
+    $("slideText").textContent=S.locked?"Slide to unlock":"Slide to lock";
+    $("shackle").setAttribute("d",S.locked?"M8 11V8a4 4 0 0 1 8 0v3":"M8 11V8a4 4 0 0 1 7.5-2");
+    place(S.locked?MAX():0,true);
+  }
+  function setLocked(on){
+    S.locked=on;save();paint();
+    if(on){
+      try{if(!document.fullscreenElement)document.documentElement.requestFullscreen({navigationUI:"hide"}).catch(()=>{})}catch(e){}
+      try{history.pushState({tsLock:1},"")}catch(e){}
+    }else{
+      try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
+    }
+  }
+  slide.addEventListener("pointerdown",e=>{drag=true;startX=e.clientX;base=S.locked?MAX():0;slide.setPointerCapture(e.pointerId);knob.classList.remove("anim")});
+  slide.addEventListener("pointermove",e=>{if(!drag)return;place(Math.max(0,Math.min(MAX(),base+e.clientX-startX)))});
+  function end(e){
+    if(!drag)return;drag=false;
+    const x=Math.max(0,Math.min(MAX(),base+e.clientX-startX));
+    if(!S.locked&&x>MAX()*.85)setLocked(true);
+    else if(S.locked&&x<MAX()*.15)setLocked(false);
+    else paint();
+  }
+  slide.addEventListener("pointerup",end);slide.addEventListener("pointercancel",()=>{drag=false;paint()});
+  // back gesture: while locked, stay on the videos
+  addEventListener("popstate",()=>{if(S.locked){try{history.pushState({tsLock:1},"")}catch(e){}}});
+  // if the app is reopened while locked, stay locked
+  window.appLocked=()=>!!S.locked;
+  paint();
+})();
 
 function openParent(){
   parentOpen=true;pauseAll();$("setup").hidden=true;$("startMsg").textContent="";
@@ -789,7 +838,7 @@ function closeParent(start){
 }
 $("closeParent").addEventListener("click",()=>closeParent(false));
 pressable($("startBtn"),()=>closeParent(true));
-const APP_VERSION="2026.11.02 · build 22:45";
+const APP_VERSION="2026.11.02 · build 22:56";
 // Update check: when a newer version is on GitHub, offer a one-tap restart.
 (function(){
   let dismissed="";
@@ -959,8 +1008,7 @@ async function pullCreator(c,maxPages=2){
     return out.slice(0,PER_CREATOR);
   }
   let clips=[],seenShorts=0,notKids=0;
-  try{clips=await walk("UUSH"+base,180)}catch(e){ if(!/found|playlist/i.test(e.message))throw e }   // the channel's Shorts list
-  if(!clips.length){try{clips=await walk("UU"+base,60)}catch(e){}}                                    // else its uploads under 1 minute
+  try{clips=await walk("UUSH"+base,180)}catch(e){ if(!/found|playlist/i.test(e.message))throw e }   // true Shorts only, so YouTube uses its Shorts layout
   if(!clips.length)throw new Error(!seenShorts?"This channel has no Shorts":notKids===seenShorts?"Shorts aren't marked Made for Kids":"No playable Shorts");
   return clips;
 }
